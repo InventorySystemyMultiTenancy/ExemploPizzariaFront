@@ -4,18 +4,17 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 
-const SIZES = ["PEQUENA", "MEDIA", "GRANDE", "FAMILIA"];
+const SIZES = ["PEQUENA", "GRANDE"];
 const SIZE_LABEL = {
-  PEQUENA: "Pequena",
-  MEDIA: "Média",
+  PEQUENA: "Broto",
   GRANDE: "Grande",
-  FAMILIA: "Família",
 };
 
 const emptyForm = () => ({
   name: "",
   description: "",
   imageUrl: "",
+  category: "",
   sizes: SIZES.map((size) => ({ size, price: "" })),
 });
 
@@ -29,6 +28,7 @@ function ProductModal({ product, onClose }) {
       name: product.name,
       description: product.description ?? "",
       imageUrl: product.imageUrl ?? "",
+      category: product.category ?? "",
       sizes: SIZES.map((size) => {
         const existing = product.sizes?.find((s) => s.size === size);
         return { size, price: existing ? String(existing.price) : "" };
@@ -89,6 +89,7 @@ function ProductModal({ product, onClose }) {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
+      category: form.category.trim() || undefined,
       sizes: form.sizes
         .filter((s) => s.price !== "")
         .map((s) => ({ size: s.size, price: Number(s.price) })),
@@ -134,6 +135,21 @@ function ProductModal({ product, onClose }) {
               rows={2}
               className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder="Breve descrição do sabor..."
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
+              Categoria
+            </label>
+            <input
+              value={form.category}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, category: e.target.value }))
+              }
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+              placeholder="Ex: Doce, Salgado, Bebidas..."
             />
           </div>
 
