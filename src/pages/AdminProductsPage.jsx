@@ -18,7 +18,7 @@ const emptyForm = () => ({
   sizes: SIZES.map((size) => ({ size, price: "" })),
 });
 
-function ProductModal({ product, onClose }) {
+function ProductModal({ product, onClose, existingCategories = [] }) {
   const queryClient = useQueryClient();
   const isEdit = !!product;
 
@@ -144,6 +144,7 @@ function ProductModal({ product, onClose }) {
               Categoria
             </label>
             <input
+              list="category-options"
               value={form.category}
               onChange={(e) =>
                 setForm((p) => ({ ...p, category: e.target.value }))
@@ -151,6 +152,11 @@ function ProductModal({ product, onClose }) {
               className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder="Ex: Doce, Salgado, Bebidas..."
             />
+            <datalist id="category-options">
+              {existingCategories.map((cat) => (
+                <option key={cat} value={cat} />
+              ))}
+            </datalist>
           </div>
 
           {/* Image URL */}
@@ -352,6 +358,12 @@ function AdminProductsPage() {
     },
   });
 
+  const existingCategories = [
+    ...new Set(
+      products.map((p) => p.category).filter((c) => c && c !== "Geral"),
+    ),
+  ];
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
       <header className="flex items-center justify-between">
@@ -417,6 +429,7 @@ function AdminProductsPage() {
         <ProductModal
           product={modal === "new" ? null : modal}
           onClose={() => setModal(null)}
+          existingCategories={existingCategories}
         />
       )}
     </main>
