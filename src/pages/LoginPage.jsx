@@ -42,12 +42,21 @@ function LoginPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 text-white sm:px-0">
+    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 text-cream sm:px-0">
       <form
         onSubmit={onSubmit}
         className="w-full rounded-3xl border border-gold/20 bg-lacquer/70 p-5 sm:p-7"
       >
-        <h1 className="font-display text-3xl text-gold">Entrar</h1>
+        <div className="mb-4 flex justify-center">
+          <div className="rounded-xl bg-white px-4 py-2 shadow-md">
+            <img
+              src="/logo-fellice.png"
+              alt="Pizzaria Fellice"
+              className="h-12 w-auto"
+            />
+          </div>
+        </div>
+        <h1 className="font-display text-2xl text-gold">Entrar</h1>
         <p className="mt-1 text-sm text-smoke">
           Use sua conta para acompanhar pedidos.
         </p>
@@ -61,7 +70,7 @@ function LoginPage() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, email: e.target.value }))
             }
-            className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-2xl border border-cream/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
           />
           <input
             type="password"
@@ -71,21 +80,21 @@ function LoginPage() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, password: e.target.value }))
             }
-            className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-2xl border border-cream/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
           />
         </div>
 
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="mt-5 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 px-5 py-4 text-base font-bold disabled:opacity-50"
+          className="mt-5 w-full rounded-2xl bg-gradient-to-r from-ember to-rosso px-5 py-4 text-base font-bold text-white disabled:opacity-50"
         >
           {mutation.isPending ? "Entrando..." : "Entrar"}
         </button>
 
         <Link
           to="/"
-          className="mt-4 block text-center text-sm text-smoke hover:text-white"
+          className="mt-4 block text-center text-sm text-smoke hover:text-cream"
         >
           Voltar para o cardapio
         </Link>

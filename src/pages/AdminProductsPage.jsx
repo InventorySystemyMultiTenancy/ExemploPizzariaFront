@@ -340,7 +340,7 @@ function AdminProductsPage() {
         <div>
           <h1 className="font-display text-3xl text-gold">Produtos</h1>
           <p className="mt-1 text-sm text-smoke">
-            Gerencie o cardápio da Pizzaria China
+            Gerencie o cardápio da Pizzaria Fellice
           </p>
         </div>
         <div className="flex items-center gap-3">

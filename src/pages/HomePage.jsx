@@ -9,17 +9,21 @@ function HomePage() {
   const { isAuthenticated, user, logout } = useAuth();
 
   return (
-    <main className="min-h-screen bg-ink bg-texture pb-24 text-white">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <h1 className="font-display text-2xl text-gold sm:text-3xl">
-          Pizzaria China
-        </h1>
+    <main className="min-h-screen bg-ink bg-texture pb-24 text-cream">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="rounded-xl bg-white px-3 py-1.5 shadow-md">
+          <img
+            src="/logo-fellice.png"
+            alt="Pizzaria Fellice"
+            className="h-9 w-auto sm:h-11"
+          />
+        </div>
 
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
               <Link
-                className="rounded-xl border border-white/10 px-3 py-2 text-xs sm:text-sm"
+                className="rounded-xl border border-cream/10 px-3 py-2 text-xs sm:text-sm"
                 to={user?.role === "ADMIN" ? "/admin" : "/dashboard"}
               >
                 Painel
@@ -49,19 +53,23 @@ function HomePage() {
         <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-ember/30 to-black/40 p-5">
           <h2 className="font-display text-2xl text-gold">Sabores da Semana</h2>
           <p className="mt-2 text-sm text-smoke">
-            Experiencia oriental em cada fatia, com massa de fermentacao lenta e
-            ingredientes premium.
+            27 anos de tradicao italiana em cada fatia, com massa de fermentacao
+            lenta e ingredientes selecionados.
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-white/90">
-            <li>• Frango Xadrez com gengibre fresco</li>
-            <li>• Pepperoni de Hong Kong com pimenta doce</li>
-            <li>• Borda vulcao de catupiry trufado</li>
+          <ul className="mt-4 space-y-2 text-sm text-cream/90">
+            <li>• Mussarela de bufala com manjericao fresco</li>
+            <li>• Calabresa artesanal com cebola caramelizada</li>
+            <li>• Borda recheada de catupiry trufado</li>
           </ul>
+
+          <p className="mt-5 text-center font-script text-lg text-gold/80 italic">
+            O seu momento de ser feliz!
+          </p>
 
           <button
             type="button"
             onClick={openCart}
-            className="mt-6 w-full rounded-2xl bg-gradient-to-r from-gold to-amber-300 px-5 py-4 text-base font-extrabold text-black"
+            className="mt-4 w-full rounded-2xl bg-gradient-to-r from-gold to-amber-400 px-5 py-4 text-base font-extrabold text-black"
           >
             Abrir Carrinho ({items.length})
           </button>

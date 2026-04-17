@@ -81,7 +81,7 @@ function AdminPanelPage() {
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-white sm:px-6">
       <h1 className="font-display text-3xl text-gold">Painel Admin</h1>
       <p className="mt-2 text-sm text-smoke">
-        Visao operacional para equipe da Pizzaria China.
+        Visao operacional para equipe da Pizzaria Fellice.
       </p>
       <p className="mt-1 text-xs text-red-300">
         {overdueCount

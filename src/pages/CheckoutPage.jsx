@@ -35,7 +35,7 @@ function CheckoutPage() {
   const createOrderMutation = useMutation({
     mutationFn: async () => {
       const payload = {
-        deliveryAddress: "Rua do Dragao, 88",
+        deliveryAddress: "Rua das Oliveiras, 27",
         notes: "Pedido via checkout mock",
         paymentMethod: "PIX",
         items: items.map(mapItemToApi),

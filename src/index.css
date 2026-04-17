@@ -1,12 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Dancing+Script:wght@600;700&family=Manrope:wght@400;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color: #f8f8fb;
-  background: #0b0b0f;
+  color: #f5e6c8;
+  background: #0c0b08;
   font-family: "Manrope", sans-serif;
 }
 
@@ -18,8 +18,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #0b0b0f;
-  color: #f8f8fb;
+  background: #0c0b08;
+  color: #f5e6c8;
 }
 
 #root {

@@ -4,22 +4,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#0b0b0f",
-        ember: "#8d1a1a",
-        gold: "#d4a94d",
-        lacquer: "#17171e",
-        smoke: "#9b9ba8",
+        ink: "#0c0b08",
+        ember: "#a81a1a",
+        gold: "#c9a227",
+        lacquer: "#161410",
+        smoke: "#a09880",
+        cream: "#f5e6c8",
+        rosso: "#cc2020",
       },
       fontFamily: {
         display: ["Cinzel", "serif"],
+        script: ["Dancing Script", "cursive"],
         body: ["Manrope", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(212,169,77,0.25), 0 18px 40px rgba(0,0,0,0.5)",
+        glow: "0 0 0 1px rgba(201,162,39,0.25), 0 18px 40px rgba(0,0,0,0.6)",
       },
       backgroundImage: {
         texture:
-          "radial-gradient(circle at 10% 20%, rgba(212,169,77,0.08), transparent 40%), radial-gradient(circle at 90% 0%, rgba(141,26,26,0.2), transparent 45%)",
+          "radial-gradient(circle at 10% 20%, rgba(201,162,39,0.07), transparent 40%), radial-gradient(circle at 90% 0%, rgba(168,26,26,0.18), transparent 45%)",
       },
     },
   },

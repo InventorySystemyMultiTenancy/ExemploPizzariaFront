@@ -31,7 +31,10 @@ function CheckoutMock() {
             Escaneie o QR Code para pagar
           </p>
           <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-2xl bg-white p-4">
-            <QRCodeSVG value="pix://pizzariachina/checkout/123456" size={180} />
+            <QRCodeSVG
+              value="pix://pizzariafellice/checkout/123456"
+              size={180}
+            />
           </div>
           <p className="mt-3 text-xs text-smoke">
             Pedido confirmado apos aprovacao do pagamento.
