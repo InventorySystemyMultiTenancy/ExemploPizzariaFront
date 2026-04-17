@@ -1,10 +1,242 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CheckoutMock from "../components/CheckoutMock.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
+
+const mapItemToApi = (item) => {
+  const payload = item.payload || {};
+
+  if (payload.type === "MEIO_A_MEIO") {
+    return {
+      type: "MEIO_A_MEIO",
+      firstHalfProductId: payload.flavors[0],
+      secondHalfProductId: payload.flavors[1],
+      size: payload.size,
+      quantity: item.quantity,
+    };
+  }
+
+  return {
+    type: "INTEIRA",
+    productId: payload.flavors[0],
+    size: payload.size,
+    quantity: item.quantity,
+  };
+};
+
+function CheckoutPage() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const { items, formatted, total, clearCart } = useCart();
+  const [paymentMode, setPaymentMode] = useState("online"); // "online" | "presencial"
+
+  // 1. Create order
+  const createOrderMutation = useMutation({
+    mutationFn: async (paymentMethod) => {
+      const response = await api.post("/orders", {
+        deliveryAddress: user?.address || "Endereço não informado",
+        notes: "",
+        paymentMethod,
+        items: items.map(mapItemToApi),
+      });
+      return response.data?.data || response.data;
+    },
+  });
+
+  // 2. Create MP preference (after order exists)
+  const preferenceMutation = useMutation({
+    mutationFn: async (orderId) => {
+      const response = await api.post("/payments/preference", { orderId });
+      return response.data?.data;
+    },
+  });
+
+  const handleOnlineCheckout = async () => {
+    try {
+      const order = await createOrderMutation.mutateAsync("PIX");
+      const pref = await preferenceMutation.mutateAsync(order.id);
+      clearCart();
+      // Redirect to Mercado Pago
+      window.location.href = pref.initPoint;
+    } catch {
+      toast.error("Erro ao gerar pagamento. Tente novamente.");
+    }
+  };
+
+  const handlePresencialCheckout = async () => {
+    try {
+      await createOrderMutation.mutateAsync("PRESENCIAL");
+      toast.success("Pedido confirmado! Aguarde o cobrança presencial.");
+      clearCart();
+      navigate("/dashboard");
+    } catch {
+      toast.error("Erro ao criar pedido. Tente novamente.");
+    }
+  };
+
+  const isLoading =
+    createOrderMutation.isPending || preferenceMutation.isPending;
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 text-gray-900 sm:px-6">
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
+        >
+          ← Voltar
+        </button>
+        <h1 className="font-display text-3xl text-gold">Checkout</h1>
+      </div>
+
+      {!items.length ? (
+        <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
+          Seu carrinho está vazio.
+        </p>
+      ) : (
+        <div className="mt-2 grid gap-6 sm:grid-cols-2">
+          {/* Resumo do pedido */}
+          <div className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
+            <h2 className="font-display text-xl text-gold">Resumo</h2>
+            <ul className="mt-4 space-y-3 text-sm">
+              {items.map((item) => (
+                <li
+                  key={item.key}
+                  className="flex items-start justify-between gap-3"
+                >
+                  <div>
+                    <p className="font-semibold">{item.title}</p>
+                    <p className="text-xs text-smoke">{item.description}</p>
+                  </div>
+                  <p className="font-semibold text-gold">x{item.quantity}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-5 border-t border-gray-200 pt-4 text-sm">
+              <div className="flex justify-between text-smoke">
+                <span>Subtotal</span>
+                <span>{formatted.subtotal}</span>
+              </div>
+              <div className="mt-1 flex justify-between text-smoke">
+                <span>Frete</span>
+                <span>{formatted.freight}</span>
+              </div>
+              <div className="mt-2 flex justify-between text-lg font-bold text-gold">
+                <span>Total</span>
+                <span>{formatted.total}</span>
+              </div>
+            </div>
+
+            {user?.address && (
+              <p className="mt-4 rounded-xl bg-gray-50 px-3 py-2 text-xs text-smoke">
+                📍 {user.address}
+              </p>
+            )}
+          </div>
+
+          {/* Seleção de pagamento */}
+          <div className="flex flex-col gap-4">
+            <h2 className="font-display text-xl text-gold">Pagamento</h2>
+
+            {/* Toggle */}
+            <div className="flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
+              <button
+                type="button"
+                onClick={() => setPaymentMode("online")}
+                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                  paymentMode === "online"
+                    ? "bg-rosso text-white shadow"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                💳 Pagar Online
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMode("presencial")}
+                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                  paymentMode === "presencial"
+                    ? "bg-white text-gray-900 shadow"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                💵 Pagar Presencial
+              </button>
+            </div>
+
+            {paymentMode === "online" ? (
+              <div className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.71/mercadopago/logo__large@2x.png"
+                    alt="Mercado Pago"
+                    className="h-6 w-auto"
+                  />
+                </div>
+                <p className="mt-3 text-sm text-smoke">
+                  Pague com Pix, cartão de crédito ou débito via Mercado Pago.
+                  Você será redirecionado para o ambiente seguro de pagamento.
+                </p>
+                <ul className="mt-3 space-y-1 text-xs text-smoke">
+                  <li>✅ Pagamento 100% seguro</li>
+                  <li>✅ Pix, crédito, débito aceitos</li>
+                  <li>✅ Preparo inicia automaticamente após confirmação</li>
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5">
+                <p className="text-sm font-bold text-amber-800">
+                  ⚠️ Atenção — leia antes de confirmar
+                </p>
+                <p className="mt-2 text-sm text-amber-700">
+                  O pagamento presencial é cobrado pelo entregador ou no balcão
+                  no momento da entrega.
+                </p>
+                <p className="mt-3 rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900">
+                  🚫 O preparo do seu pedido{" "}
+                  <span className="underline">só começa</span> depois que o
+                  pagamento for confirmado por nossa equipe. Pedidos sem
+                  pagamento confirmado serão cancelados.
+                </p>
+                <p className="mt-3 text-xs text-amber-600">
+                  Aceitamos: dinheiro, cartão na maquininha.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Botão de ação */}
+      {items.length > 0 && (
+        <button
+          type="button"
+          disabled={isLoading || !isAuthenticated || !total}
+          onClick={
+            paymentMode === "online"
+              ? handleOnlineCheckout
+              : handlePresencialCheckout
+          }
+          className="mt-6 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isLoading
+            ? "Processando..."
+            : paymentMode === "online"
+              ? "Pagar com Mercado Pago →"
+              : "Confirmar Pedido Presencial"}
+        </button>
+      )}
+    </main>
+  );
+}
+
+export default CheckoutPage;
+
 
 const mapItemToApi = (item) => {
   const payload = item.payload || {};

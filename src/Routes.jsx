@@ -4,6 +4,7 @@ import AdminProductsPage from "./pages/AdminProductsPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
 import CardapioPage from "./pages/CardapioPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
+import CheckoutReturnPage from "./pages/CheckoutReturnPage.jsx";
 import ClientDashboardPage from "./pages/ClientDashboardPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import KitchenPage from "./pages/KitchenPage.jsx";
@@ -16,6 +17,7 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/checkout/retorno" element={<CheckoutReturnPage />} />
 
       <Route
         element={
