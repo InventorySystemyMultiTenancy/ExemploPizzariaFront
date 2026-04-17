@@ -56,7 +56,16 @@ function CheckoutPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 text-gray-900 sm:px-6">
-      <h1 className="font-display text-3xl text-gold">Checkout</h1>
+      <div className="mb-4 flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
+        >
+          ← Voltar
+        </button>
+        <h1 className="font-display text-3xl text-gold">Checkout</h1>
+      </div>
 
       {!items.length ? (
         <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
