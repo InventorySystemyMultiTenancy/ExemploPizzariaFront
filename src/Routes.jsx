@@ -22,7 +22,11 @@ function AppRoutes() {
         <Route path="/dashboard" element={<ClientDashboardPage />} />
       </Route>
 
-      <Route element={<PrivateRoute allowedRoles={["COZINHA"]} />}>
+      <Route
+        element={
+          <PrivateRoute allowedRoles={["COZINHA", "ADMIN", "FUNCIONARIO"]} />
+        }
+      >
         <Route path="/cozinha" element={<KitchenPage />} />
       </Route>
 
