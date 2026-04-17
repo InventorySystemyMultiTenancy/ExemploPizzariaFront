@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminPanelPage from "./pages/AdminPanelPage.jsx";
 import AdminProductsPage from "./pages/AdminProductsPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
+import CardapioPage from "./pages/CardapioPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import ClientDashboardPage from "./pages/ClientDashboardPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
@@ -13,6 +14,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
 

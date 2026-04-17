@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
-import PizzaSelector from "../components/PizzaSelector.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 
@@ -18,7 +17,13 @@ function HomePage() {
             alt="Pizzaria Fellice"
             className="h-10 w-auto"
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/cardapio"
+              className="text-sm font-semibold text-gray-700 transition-colors hover:text-rosso"
+            >
+              Cardápio
+            </Link>
             {isAuthenticated ? (
               <>
                 <Link
@@ -82,57 +87,58 @@ function HomePage() {
               Massa de fermentação lenta, ingredientes selecionados e o sabor
               que faz você se sentir feliz.
             </p>
-            <button
-              type="button"
-              onClick={openCart}
-              className="mt-7 rounded-2xl bg-rosso px-8 py-4 text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.03] hover:bg-ember"
+            <Link
+              to="/cardapio"
+              className="mt-7 inline-block rounded-2xl bg-rosso px-8 py-4 text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.03] hover:bg-ember"
             >
               Fazer Pedido Agora
-            </button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Cardápio */}
-      <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-10 sm:grid-cols-[1.3fr,0.7fr] sm:px-8">
-        <PizzaSelector />
-
-        <div className="rounded-3xl border border-rose-100 bg-rose-50/60 p-6 shadow-sm">
-          <h2 className="font-display text-2xl text-rosso">
-            Sabores da Semana
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-gray-500">
-            27 anos de tradição italiana em cada fatia, com massa de fermentação
-            lenta e ingredientes selecionados.
+      {/* Sobre */}
+      <section className="mx-auto max-w-4xl px-6 py-16 sm:px-8">
+        <div className="mb-10 text-center">
+          <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
+            Nossa história
           </p>
-          <ul className="mt-5 space-y-3 text-sm text-gray-700">
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-rosso">●</span>
-              Mussarela de búfala com manjericão fresco
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-rosso">●</span>
-              Calabresa artesanal com cebola caramelizada
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-rosso">●</span>
-              Borda recheada de catupiry trufado
-            </li>
-          </ul>
+          <h2 className="mt-2 font-display text-3xl font-bold text-gray-900 sm:text-4xl">
+            Pizzaria Fellice – 27 Anos de Tradição
+          </h2>
+          <div className="mx-auto mt-3 h-0.5 w-16 rounded-full bg-rosso" />
+        </div>
 
-          <div className="mt-6 border-t border-rose-100 pt-5">
-            <p className="text-center font-script text-xl italic text-rosso/80">
-              O seu momento de ser feliz!
-            </p>
-          </div>
+        <div className="space-y-5 text-base leading-8 text-gray-600">
+          <p>
+            Desde 1997, a Pizzaria Fellice é sinônimo de qualidade e sabor.
+            Combinamos ingredientes frescos e selecionados com receitas
+            exclusivas para criar pizzas que encantam a todos. Seja em nosso
+            salão, que oferece um ambiente aconchegante para momentos especiais,
+            ou através do nosso eficiente serviço de delivery, garantimos uma
+            experiência gastronômica única.
+          </p>
+          <p>
+            Além das nossas pizzas, oferecemos uma deliciosa variedade de
+            porções, beirutes, petiscos, batatas e sobremesas, tudo preparado
+            com o mesmo cuidado e dedicação que nos tornaram referência na
+            região.
+          </p>
+          <p>
+            Descubra por que a Pizzaria Fellice é a escolha certa para quem
+            busca tradição, qualidade e um toque de exclusividade. Visite-nos ou
+            faça seu pedido online e saboreie o melhor da gastronomia italiana
+            com o nosso toque especial.
+          </p>
+        </div>
 
-          <button
-            type="button"
-            onClick={openCart}
-            className="mt-5 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-extrabold text-white shadow-md transition hover:bg-ember"
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/cardapio"
+            className="rounded-2xl bg-rosso px-10 py-4 text-base font-bold text-white shadow-md transition-all hover:scale-[1.02] hover:bg-ember"
           >
-            Abrir Carrinho{items.length > 0 ? ` (${items.length})` : ""}
-          </button>
+            Ver Cardápio Completo
+          </Link>
         </div>
       </section>
 
