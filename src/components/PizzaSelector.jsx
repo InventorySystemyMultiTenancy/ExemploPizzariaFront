@@ -204,23 +204,33 @@ function PizzaSelector() {
                   type="button"
                   onClick={() => toggleFlavor(product.id)}
                   disabled={blocked}
-                  className={`rounded-2xl border px-4 py-3 text-left transition-all duration-200 ${
+                  className={`rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
                     selected
                       ? "scale-[1.01] border-gold bg-gold/15 text-gray-900"
                       : "border-gray-200 bg-gray-50 text-smoke hover:border-gold/30"
                   } ${blocked ? "opacity-45" : "opacity-100"}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{product.name}</span>
-                    <span className="text-sm text-gold">
+                  {product.imageUrl && (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="h-28 w-full object-cover"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  )}
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="min-w-0">
+                      <span className="font-semibold">{product.name}</span>
+                      {product.description && (
+                        <p className="mt-0.5 text-xs opacity-60 line-clamp-1">
+                          {product.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="ml-3 shrink-0 text-sm text-gold">
                       {formatCurrency(priceForSize)}
                     </span>
                   </div>
-                  {product.description && (
-                    <p className="mt-0.5 text-xs opacity-60">
-                      {product.description}
-                    </p>
-                  )}
                 </button>
               );
             })}
