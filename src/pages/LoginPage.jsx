@@ -42,63 +42,85 @@ function LoginPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 text-cream sm:px-0">
-      <form
-        onSubmit={onSubmit}
-        className="w-full rounded-3xl border border-gold/20 bg-lacquer/70 p-5 sm:p-7"
-      >
-        <div className="mb-4 flex justify-center">
-          <div className="rounded-xl bg-white px-4 py-2 shadow-md">
+    <main className="flex min-h-screen bg-white text-gray-900">
+      {/* Left — hero */}
+      <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
+        <img
+          src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&q=80"
+          alt="Pizza artesanal Fellice"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-rosso/80 to-black/60" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-12 text-white">
+          <img
+            src="/logo-fellice.png"
+            alt="Pizzaria Fellice"
+            className="h-16 w-auto brightness-0 invert"
+          />
+          <p className="font-script text-2xl italic text-white/90">
+            O seu momento de ser feliz!
+          </p>
+        </div>
+      </div>
+
+      {/* Right — form */}
+      <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+        <div className="w-full max-w-sm">
+          {/* Logo mobile */}
+          <div className="mb-8 flex justify-center lg:hidden">
             <img
               src="/logo-fellice.png"
               alt="Pizzaria Fellice"
               className="h-12 w-auto"
             />
           </div>
+
+          <h1 className="font-display text-3xl font-bold text-gray-900">
+            Bem-vindo
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Entre na sua conta para acompanhar pedidos.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            <input
+              type="email"
+              required
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, email: e.target.value }))
+              }
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10"
+            />
+            <input
+              type="password"
+              required
+              placeholder="Senha"
+              value={form.password}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10"
+            />
+
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+            >
+              {mutation.isPending ? "Entrando..." : "Entrar"}
+            </button>
+          </form>
+
+          <Link
+            to="/"
+            className="mt-5 block text-center text-sm text-gray-400 transition hover:text-rosso"
+          >
+            ← Voltar para o cardápio
+          </Link>
         </div>
-        <h1 className="font-display text-2xl text-gold">Entrar</h1>
-        <p className="mt-1 text-sm text-smoke">
-          Use sua conta para acompanhar pedidos.
-        </p>
-
-        <div className="mt-5 space-y-3">
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, email: e.target.value }))
-            }
-            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none focus:border-gold"
-          />
-          <input
-            type="password"
-            required
-            placeholder="Senha"
-            value={form.password}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, password: e.target.value }))
-            }
-            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none focus:border-gold"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="mt-5 w-full rounded-2xl bg-gradient-to-r from-ember to-rosso px-5 py-4 text-base font-bold text-white disabled:opacity-50"
-        >
-          {mutation.isPending ? "Entrando..." : "Entrar"}
-        </button>
-
-        <Link
-          to="/"
-          className="mt-4 block text-center text-sm text-smoke hover:text-cream"
-        >
-          Voltar para o cardapio
-        </Link>
-      </form>
+      </div>
     </main>
   );
 }

@@ -28,14 +28,14 @@ function CartDrawer() {
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-2xl text-gold">Seu Carrinho</h3>
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <h3 className="font-display text-2xl text-gray-900">Seu Carrinho</h3>
           <button
             type="button"
             onClick={closeCart}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-smoke"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition hover:bg-gray-50"
           >
-            Fechar
+            ✕ Fechar
           </button>
         </div>
 
@@ -120,7 +120,7 @@ function CartDrawer() {
             onClick={closeCart}
             className={`mt-4 block rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
               total
-                ? "bg-gradient-to-r from-gold to-amber-300 text-black"
+                ? "bg-rosso text-white shadow-md hover:bg-ember"
                 : "pointer-events-none bg-gray-200 text-gray-400"
             }`}
           >

@@ -104,12 +104,12 @@ function PizzaSelector() {
 
   if (isLoading) {
     return (
-      <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-6 shadow-glow">
+      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="animate-pulse space-y-3">
-          <div className="h-6 w-1/3 rounded bg-gray-200" />
-          <div className="h-4 w-2/3 rounded bg-gray-200" />
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 rounded-2xl bg-gray-50" />
+          <div className="h-6 w-1/3 rounded bg-gray-100" />
+          <div className="h-4 w-2/3 rounded bg-gray-100" />
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 rounded-2xl bg-gray-50" />
           ))}
         </div>
       </section>
@@ -118,8 +118,8 @@ function PizzaSelector() {
 
   if (isError || !products.length) {
     return (
-      <section className="rounded-3xl border border-red-500/30 bg-lacquer/70 p-6 shadow-glow">
-        <p className="text-center text-smoke">
+      <section className="rounded-3xl border border-red-100 bg-red-50/40 p-6 shadow-sm">
+        <p className="text-center text-gray-500">
           Nao foi possivel carregar os sabores. Tente novamente.
         </p>
       </section>
@@ -127,31 +127,31 @@ function PizzaSelector() {
   }
 
   return (
-    <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 shadow-glow sm:p-6">
-      <header className="mb-4">
-        <h2 className="font-display text-xl text-gold sm:text-2xl">
+    <section className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+      <header className="mb-5">
+        <h2 className="font-display text-2xl text-gray-900 sm:text-3xl">
           Monte sua Pizza
         </h2>
-        <p className="mt-1 text-sm text-smoke">
-          Tamanho - Borda - Sabores (maximo 2)
+        <p className="mt-1 text-sm text-gray-400">
+          Escolha tamanho, borda e até 2 sabores
         </p>
       </header>
 
       <div className="space-y-5">
         <div>
-          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-smoke">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
             Tamanho
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {sizeOptions.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => setSelectedSizeKey(option.id)}
-                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                className={`rounded-xl border py-3 text-sm font-semibold transition-all duration-200 ${
                   selectedSizeKey === option.id
-                    ? "scale-[1.02] border-gold bg-gold/15 text-gold"
-                    : "border-gray-200 bg-gray-50 text-gray-900 hover:border-gold/40"
+                    ? "border-rosso bg-rosso/8 text-rosso ring-1 ring-rosso/30"
+                    : "border-gray-200 bg-gray-50 text-gray-700 hover:border-rosso/40"
                 }`}
               >
                 {option.label}
@@ -161,25 +161,27 @@ function PizzaSelector() {
         </div>
 
         <div>
-          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-smoke">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
             Borda
           </p>
-          <div className="grid gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {crusts.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => setCrust(option)}
-                className={`rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-200 ${
+                className={`rounded-xl border px-3 py-3 text-left text-xs transition-all duration-200 sm:text-sm ${
                   crust.id === option.id
-                    ? "border-ember bg-ember/20 text-gray-900"
-                    : "border-gray-200 bg-gray-50 text-smoke hover:border-ember/40"
+                    ? "border-rosso bg-rosso/8 text-gray-900 ring-1 ring-rosso/30"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-rosso/40"
                 }`}
               >
-                <span className="font-semibold">{option.label}</span>
-                <span className="ml-2 text-xs text-gold">
-                  +{formatCurrency(option.extra)}
-                </span>
+                <span className="block font-semibold">{option.label}</span>
+                {option.extra > 0 && (
+                  <span className="text-[10px] text-gold">
+                    +{formatCurrency(option.extra)}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -187,12 +189,14 @@ function PizzaSelector() {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.2em] text-smoke">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
               Sabores
             </p>
-            <p className="text-xs text-gold">{selectedFlavors.length}/2</p>
+            <p className="text-xs font-bold text-rosso">
+              {selectedFlavors.length}/2
+            </p>
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {products.map((product) => {
               const selected = selectedFlavors.includes(product.id);
               const blocked = !selected && selectedFlavors.length === 2;
@@ -206,28 +210,30 @@ function PizzaSelector() {
                   disabled={blocked}
                   className={`rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
                     selected
-                      ? "scale-[1.01] border-gold bg-gold/15 text-gray-900"
-                      : "border-gray-200 bg-gray-50 text-smoke hover:border-gold/30"
-                  } ${blocked ? "opacity-45" : "opacity-100"}`}
+                      ? "border-rosso ring-2 ring-rosso/20 bg-rose-50 text-gray-900"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-rosso/30 hover:shadow-sm"
+                  } ${blocked ? "opacity-40" : "opacity-100"}`}
                 >
                   {product.imageUrl && (
                     <img
                       src={product.imageUrl}
                       alt={product.name}
-                      className="h-28 w-full object-cover"
+                      className="h-32 w-full object-cover"
                       onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                   )}
-                  <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center justify-between px-3 py-2.5">
                     <div className="min-w-0">
-                      <span className="font-semibold">{product.name}</span>
+                      <span className="block font-semibold text-sm leading-tight">
+                        {product.name}
+                      </span>
                       {product.description && (
-                        <p className="mt-0.5 text-xs opacity-60 line-clamp-1">
+                        <p className="mt-0.5 text-xs text-gray-400 line-clamp-1">
                           {product.description}
                         </p>
                       )}
                     </div>
-                    <span className="ml-3 shrink-0 text-sm text-gold">
+                    <span className="ml-2 shrink-0 text-xs font-bold text-rosso">
                       {formatCurrency(priceForSize)}
                     </span>
                   </div>
@@ -238,16 +244,16 @@ function PizzaSelector() {
         </div>
       </div>
 
-      <footer className="mt-6 rounded-2xl border border-gold/25 bg-gray-100 p-4">
-        <p className="text-sm text-smoke">{description}</p>
-        <p className="mt-2 text-2xl font-bold text-gold">
+      <footer className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 shadow-sm">
+        <p className="text-sm text-gray-400">{description}</p>
+        <p className="mt-1 text-3xl font-bold text-rosso">
           {formatCurrency(pizzaPrice)}
         </p>
         <button
           type="button"
           onClick={handleAddToCart}
           disabled={!selectedFlavors.length}
-          className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 px-5 py-4 text-base font-bold text-white transition-all duration-200 hover:scale-[1.01] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-4 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-ember hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Adicionar ao Carrinho
         </button>
