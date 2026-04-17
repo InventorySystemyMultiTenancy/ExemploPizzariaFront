@@ -79,11 +79,21 @@ function AdminPanelPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
-      <h1 className="font-display text-3xl text-gold">Painel Admin</h1>
-      <p className="mt-2 text-sm text-smoke">
-        Visao operacional para equipe da Pizzaria Fellice.
-      </p>
-      <p className="mt-1 text-xs text-red-300">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl text-gold">Painel Admin</h1>
+          <p className="mt-1 text-sm text-smoke">
+            Visao operacional para equipe da Pizzaria Fellice.
+          </p>
+        </div>
+        <Link
+          to="/"
+          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
+        >
+          ← Início
+        </Link>
+      </div>
+      <p className="text-xs text-red-300">
         {overdueCount
           ? `${overdueCount} pedidos exigem atencao imediata`
           : "Operacao sem atrasos no momento"}
@@ -104,7 +114,9 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">🍕</p>
-          <h2 className="mt-2 font-semibold text-gray-900">Gerenciar Produtos</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            Gerenciar Produtos
+          </h2>
           <p className="mt-1 text-xs text-smoke">
             Cadastrar, editar e desativar itens do cardapio
           </p>
@@ -114,7 +126,9 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">📈</p>
-          <h2 className="mt-2 font-semibold text-gray-900">Análise de Vendas</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            Análise de Vendas
+          </h2>
           <p className="mt-1 text-xs text-smoke">
             Receita, ticket medio e sabores mais vendidos
           </p>
@@ -124,7 +138,9 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">👨‍🍳</p>
-          <h2 className="mt-2 font-semibold text-gray-900">Painel da Cozinha</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            Painel da Cozinha
+          </h2>
           <p className="mt-1 text-xs text-smoke">
             Ver pedidos ativos e avançar status
           </p>
