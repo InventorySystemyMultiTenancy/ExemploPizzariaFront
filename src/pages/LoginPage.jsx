@@ -1,44 +1,90 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 
+const INPUT_CLS =
+  "w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10";
+
 function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || null;
   const { login } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
 
-  const mutation = useMutation({
+  const [tab, setTab] = useState("login");
+  const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    cpf: "",
+    email: "",
+    phone: "",
+    password: "",
+    address: "",
+  });
+
+  const handlePostAuth = (data) => {
+    login(data);
+    toast.success(tab === "login" ? "Login realizado!" : "Conta criada!");
+    const role = data.user?.role;
+    if (redirectTo) {
+      navigate(redirectTo);
+      return;
+    }
+    if (role === "COZINHA") {
+      navigate("/cozinha");
+      return;
+    }
+    if (["ADMIN", "FUNCIONARIO"].includes(role)) {
+      navigate("/admin");
+      return;
+    }
+    navigate("/dashboard");
+  };
+
+  const loginMutation = useMutation({
     mutationFn: async (payload) => {
       const response = await api.post("/auth/login", payload);
       return response.data?.data;
     },
-    onSuccess: (data) => {
-      login(data);
-      toast.success("Login realizado");
+    onSuccess: handlePostAuth,
+    onError: () => toast.error("Credenciais inválidas"),
+  });
 
-      if (data.user.role === "COZINHA") {
-        navigate("/cozinha");
-        return;
-      }
-
-      if (["ADMIN", "FUNCIONARIO"].includes(data.user.role)) {
-        navigate("/admin");
-        return;
-      }
-
-      navigate("/dashboard");
+  const registerMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await api.post("/auth/register", payload);
+      return response.data?.data;
     },
-    onError: () => {
-      toast.error("Email ou senha invalidos");
+    onSuccess: handlePostAuth,
+    onError: (err) => {
+      const msg = err.response?.data?.message || "Erro ao criar conta";
+      toast.error(msg);
     },
   });
 
-  const onSubmit = (event) => {
-    event.preventDefault();
-    mutation.mutate(form);
+  const onLoginSubmit = (e) => {
+    e.preventDefault();
+    loginMutation.mutate(loginForm);
+  };
+
+  const onRegisterSubmit = (e) => {
+    e.preventDefault();
+    const { name, cpf, email, phone, password, address } = registerForm;
+    if (!email && !phone) {
+      toast.error("Informe email ou telefone");
+      return;
+    }
+    registerMutation.mutate({
+      name,
+      cpf: cpf || undefined,
+      email: email || undefined,
+      phone: phone || undefined,
+      password,
+      address: address || undefined,
+    });
   };
 
   return (
@@ -67,7 +113,7 @@ function LoginPage() {
       <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-sm">
           {/* Logo mobile */}
-          <div className="mb-8 flex justify-center lg:hidden">
+          <div className="mb-6 flex justify-center lg:hidden">
             <img
               src="/logo-fellice.png"
               alt="Pizzaria Fellice"
@@ -75,47 +121,158 @@ function LoginPage() {
             />
           </div>
 
-          <h1 className="font-display text-3xl font-bold text-gray-900">
-            Bem-vindo
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Entre na sua conta para acompanhar pedidos.
-          </p>
-
-          <form onSubmit={onSubmit} className="mt-8 space-y-4">
-            <input
-              type="email"
-              required
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, email: e.target.value }))
-              }
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10"
-            />
-            <input
-              type="password"
-              required
-              placeholder="Senha"
-              value={form.password}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, password: e.target.value }))
-              }
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none transition focus:border-rosso focus:ring-2 focus:ring-rosso/10"
-            />
-
+          {/* Tabs */}
+          <div className="mb-6 flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
             <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+              type="button"
+              onClick={() => setTab("login")}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                tab === "login"
+                  ? "bg-white shadow text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
-              {mutation.isPending ? "Entrando..." : "Entrar"}
+              Entrar
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => setTab("register")}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                tab === "register"
+                  ? "bg-white shadow text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Criar conta
+            </button>
+          </div>
+
+          {tab === "login" ? (
+            <>
+              <h1 className="font-display text-2xl font-bold text-gray-900">
+                Bem-vindo
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Entre com email ou telefone para continuar.
+              </p>
+              <form onSubmit={onLoginSubmit} className="mt-6 space-y-4">
+                <input
+                  type="text"
+                  required
+                  placeholder="Email ou telefone"
+                  value={loginForm.identifier}
+                  onChange={(e) =>
+                    setLoginForm((p) => ({ ...p, identifier: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <input
+                  type="password"
+                  required
+                  placeholder="Senha"
+                  value={loginForm.password}
+                  onChange={(e) =>
+                    setLoginForm((p) => ({ ...p, password: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <button
+                  type="submit"
+                  disabled={loginMutation.isPending}
+                  className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+                >
+                  {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display text-2xl font-bold text-gray-900">
+                Criar conta
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Preencha os dados para se cadastrar.
+              </p>
+              <form onSubmit={onRegisterSubmit} className="mt-6 space-y-4">
+                <input
+                  type="text"
+                  required
+                  placeholder="Nome completo"
+                  value={registerForm.name}
+                  onChange={(e) =>
+                    setRegisterForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="CPF (000.000.000-00)"
+                  value={registerForm.cpf}
+                  onChange={(e) =>
+                    setRegisterForm((p) => ({ ...p, cpf: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    placeholder="Email (opcional se informar telefone)"
+                    value={registerForm.email}
+                    onChange={(e) =>
+                      setRegisterForm((p) => ({ ...p, email: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Telefone (opcional se informar email)"
+                    value={registerForm.phone}
+                    onChange={(e) =>
+                      setRegisterForm((p) => ({ ...p, phone: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                  <p className="text-xs text-smoke">
+                    * Informe ao menos email ou telefone
+                  </p>
+                </div>
+                <input
+                  type="password"
+                  required
+                  placeholder="Senha (mínimo 6 caracteres)"
+                  value={registerForm.password}
+                  onChange={(e) =>
+                    setRegisterForm((p) => ({ ...p, password: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="Endereço de entrega"
+                  value={registerForm.address}
+                  onChange={(e) =>
+                    setRegisterForm((p) => ({ ...p, address: e.target.value }))
+                  }
+                  className={INPUT_CLS}
+                />
+                <button
+                  type="submit"
+                  disabled={registerMutation.isPending}
+                  className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-50"
+                >
+                  {registerMutation.isPending
+                    ? "Criando conta..."
+                    : "Criar conta"}
+                </button>
+              </form>
+            </>
+          )}
 
           <Link
             to="/"
-            className="mt-5 block text-center text-sm text-gray-400 transition hover:text-rosso"
+            className="mt-6 block text-center text-sm text-gray-400 transition hover:text-rosso"
           >
             ← Voltar para o cardápio
           </Link>

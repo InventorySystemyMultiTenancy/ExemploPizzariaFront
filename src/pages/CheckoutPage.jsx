@@ -29,13 +29,13 @@ const mapItemToApi = (item) => {
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { items, formatted, total, clearCart } = useCart();
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
       const payload = {
-        deliveryAddress: "Rua das Oliveiras, 27",
+        deliveryAddress: user?.address || "Endereço não informado",
         notes: "Pedido via checkout mock",
         paymentMethod: "PIX",
         items: items.map(mapItemToApi),

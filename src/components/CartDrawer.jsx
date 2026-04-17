@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 
 function CartDrawer() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const {
     items,
     isCartOpen,
@@ -115,17 +118,25 @@ function CartDrawer() {
             </div>
           </div>
 
-          <Link
-            to="/checkout"
-            onClick={closeCart}
-            className={`mt-4 block rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
+          <button
+            type="button"
+            disabled={!total}
+            onClick={() => {
+              closeCart();
+              if (!isAuthenticated) {
+                navigate("/login?redirect=/checkout");
+              } else {
+                navigate("/checkout");
+              }
+            }}
+            className={`mt-4 block w-full rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
               total
                 ? "bg-rosso text-white shadow-md hover:bg-ember"
-                : "pointer-events-none bg-gray-200 text-gray-400"
+                : "cursor-not-allowed bg-gray-200 text-gray-400"
             }`}
           >
-            Ir para Checkout
-          </Link>
+            Finalizar Compra
+          </button>
         </footer>
       </aside>
     </>

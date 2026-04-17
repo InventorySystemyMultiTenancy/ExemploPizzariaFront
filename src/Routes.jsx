@@ -16,7 +16,16 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/cardapio" element={<CardapioPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+
+      <Route
+        element={
+          <PrivateRoute
+            allowedRoles={["CLIENTE", "ADMIN", "FUNCIONARIO", "COZINHA"]}
+          />
+        }
+      >
+        <Route path="/checkout" element={<CheckoutPage />} />
+      </Route>
 
       <Route element={<PrivateRoute allowedRoles={["CLIENTE"]} />}>
         <Route path="/dashboard" element={<ClientDashboardPage />} />
