@@ -5,7 +5,7 @@ const TONE_STYLES = {
   warning: "border-amber-500/30 bg-amber-500/10 text-amber-200",
   danger: "border-red-500/30 bg-red-500/10 text-red-200",
   success: "border-green-500/30 bg-green-500/10 text-green-200",
-  neutral: "border-white/10 bg-white/5 text-smoke",
+  neutral: "border-gray-200 bg-gray-50 text-smoke",
 };
 
 function EstimatedTimeBadge({ order, now, compact = false }) {

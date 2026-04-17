@@ -106,10 +106,10 @@ function PizzaSelector() {
     return (
       <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-6 shadow-glow">
         <div className="animate-pulse space-y-3">
-          <div className="h-6 w-1/3 rounded bg-white/10" />
-          <div className="h-4 w-2/3 rounded bg-white/10" />
+          <div className="h-6 w-1/3 rounded bg-gray-200" />
+          <div className="h-4 w-2/3 rounded bg-gray-200" />
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 rounded-2xl bg-white/5" />
+            <div key={i} className="h-12 rounded-2xl bg-gray-50" />
           ))}
         </div>
       </section>
@@ -151,7 +151,7 @@ function PizzaSelector() {
                 className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                   selectedSizeKey === option.id
                     ? "scale-[1.02] border-gold bg-gold/15 text-gold"
-                    : "border-white/10 bg-black/20 text-white hover:border-gold/40"
+                    : "border-gray-200 bg-gray-50 text-gray-900 hover:border-gold/40"
                 }`}
               >
                 {option.label}
@@ -172,8 +172,8 @@ function PizzaSelector() {
                 onClick={() => setCrust(option)}
                 className={`rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-200 ${
                   crust.id === option.id
-                    ? "border-ember bg-ember/20 text-white"
-                    : "border-white/10 bg-black/20 text-smoke hover:border-ember/40"
+                    ? "border-ember bg-ember/20 text-gray-900"
+                    : "border-gray-200 bg-gray-50 text-smoke hover:border-ember/40"
                 }`}
               >
                 <span className="font-semibold">{option.label}</span>
@@ -206,8 +206,8 @@ function PizzaSelector() {
                   disabled={blocked}
                   className={`rounded-2xl border px-4 py-3 text-left transition-all duration-200 ${
                     selected
-                      ? "scale-[1.01] border-gold bg-gold/15 text-white"
-                      : "border-white/10 bg-black/20 text-smoke hover:border-gold/30"
+                      ? "scale-[1.01] border-gold bg-gold/15 text-gray-900"
+                      : "border-gray-200 bg-gray-50 text-smoke hover:border-gold/30"
                   } ${blocked ? "opacity-45" : "opacity-100"}`}
                 >
                   <div className="flex items-center justify-between">
@@ -228,7 +228,7 @@ function PizzaSelector() {
         </div>
       </div>
 
-      <footer className="mt-6 rounded-2xl border border-gold/25 bg-black/30 p-4">
+      <footer className="mt-6 rounded-2xl border border-gold/25 bg-gray-100 p-4">
         <p className="text-sm text-smoke">{description}</p>
         <p className="mt-2 text-2xl font-bold text-gold">
           {formatCurrency(pizzaPrice)}

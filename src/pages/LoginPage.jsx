@@ -70,7 +70,7 @@ function LoginPage() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, email: e.target.value }))
             }
-            className="w-full rounded-2xl border border-cream/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none focus:border-gold"
           />
           <input
             type="password"
@@ -80,7 +80,7 @@ function LoginPage() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, password: e.target.value }))
             }
-            className="w-full rounded-2xl border border-cream/10 bg-black/30 px-4 py-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm outline-none focus:border-gold"
           />
         </div>
 

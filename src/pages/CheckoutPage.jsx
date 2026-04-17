@@ -55,11 +55,11 @@ function CheckoutPage() {
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 text-white sm:px-6">
+    <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 text-gray-900 sm:px-6">
       <h1 className="font-display text-3xl text-gold">Checkout</h1>
 
       {!items.length ? (
-        <p className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-smoke">
+        <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
           Seu carrinho esta vazio.
         </p>
       ) : (
@@ -81,7 +81,7 @@ function CheckoutPage() {
               ))}
             </ul>
 
-            <div className="mt-5 border-t border-white/10 pt-4 text-sm">
+            <div className="mt-5 border-t border-gray-200 pt-4 text-sm">
               <div className="flex justify-between text-smoke">
                 <span>Subtotal</span>
                 <span>{formatted.subtotal}</span>

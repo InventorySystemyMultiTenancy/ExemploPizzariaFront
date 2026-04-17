@@ -78,7 +78,7 @@ function AdminPanelPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-white sm:px-6">
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
       <h1 className="font-display text-3xl text-gold">Painel Admin</h1>
       <p className="mt-2 text-sm text-smoke">
         Visao operacional para equipe da Pizzaria Fellice.
@@ -104,7 +104,7 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">🍕</p>
-          <h2 className="mt-2 font-semibold text-white">Gerenciar Produtos</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">Gerenciar Produtos</h2>
           <p className="mt-1 text-xs text-smoke">
             Cadastrar, editar e desativar itens do cardapio
           </p>
@@ -114,7 +114,7 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">📈</p>
-          <h2 className="mt-2 font-semibold text-white">Análise de Vendas</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">Análise de Vendas</h2>
           <p className="mt-1 text-xs text-smoke">
             Receita, ticket medio e sabores mais vendidos
           </p>
@@ -124,7 +124,7 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">👨‍🍳</p>
-          <h2 className="mt-2 font-semibold text-white">Painel da Cozinha</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">Painel da Cozinha</h2>
           <p className="mt-1 text-xs text-smoke">
             Ver pedidos ativos e avançar status
           </p>
@@ -152,7 +152,7 @@ function AdminPanelPage() {
               className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                 desktopEnabled
                   ? "border-gold/30 text-gold hover:bg-gold/10"
-                  : "border-white/10 text-smoke hover:border-gold/30 hover:text-gold"
+                  : "border-gray-200 text-smoke hover:border-gold/30 hover:text-gold"
               }`}
             >
               Desktop {desktopEnabled ? "ligado" : "desligado"}
@@ -160,7 +160,7 @@ function AdminPanelPage() {
             <button
               type="button"
               onClick={() => clearStaffUnreadCount()}
-              className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+              className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
             >
               Marcar alertas como vistos {unreadCount ? `(${unreadCount})` : ""}
             </button>
@@ -170,10 +170,10 @@ function AdminPanelPage() {
           {prioritizedOrders.map((order) => (
             <li
               key={order.id}
-              className={`rounded-xl border bg-black/30 p-3 ${
+              className={`rounded-xl border bg-gray-100 p-3 ${
                 getOrderEta(order, currentNow)?.isOverdue
                   ? "border-red-500/40"
-                  : "border-white/10"
+                  : "border-gray-200"
               }`}
             >
               <div className="flex items-center justify-between gap-3">

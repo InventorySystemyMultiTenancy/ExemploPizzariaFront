@@ -16,8 +16,8 @@ function CheckoutMock() {
             onClick={() => setMethod(option)}
             className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
               method === option
-                ? "border-ember bg-ember/20 text-white"
-                : "border-white/10 bg-black/30 text-smoke"
+                ? "border-ember bg-ember/20 text-gray-900"
+                : "border-gray-200 bg-gray-100 text-smoke"
             }`}
           >
             {option === "PIX" ? "PIX" : "Cartao"}
@@ -26,7 +26,7 @@ function CheckoutMock() {
       </div>
 
       {method === "PIX" ? (
-        <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
+        <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-center">
           <p className="mb-3 text-sm text-smoke">
             Escaneie o QR Code para pagar
           </p>
@@ -41,28 +41,28 @@ function CheckoutMock() {
           </p>
         </div>
       ) : (
-        <div className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-black/30 p-4">
+        <div className="mt-5 space-y-3 rounded-2xl border border-gray-200 bg-gray-100 p-4">
           <input
             type="text"
             placeholder="Numero do cartao"
-            className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm outline-none focus:border-gold"
+            className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 text-sm outline-none focus:border-gold"
           />
           <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
               placeholder="MM/AA"
-              className="rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm outline-none focus:border-gold"
+              className="rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 text-sm outline-none focus:border-gold"
             />
             <input
               type="text"
               placeholder="CVV"
-              className="rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm outline-none focus:border-gold"
+              className="rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 text-sm outline-none focus:border-gold"
             />
           </div>
           <input
             type="text"
             placeholder="Nome no cartao"
-            className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm outline-none focus:border-gold"
+            className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 text-sm outline-none focus:border-gold"
           />
         </div>
       )}

@@ -50,7 +50,7 @@ function HomePage() {
       <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 sm:grid-cols-[1.1fr,0.9fr] sm:px-6">
         <PizzaSelector />
 
-        <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-ember/30 to-black/40 p-5">
+        <div className="rounded-3xl border border-ember/20 bg-gradient-to-b from-amber-50 to-orange-50 p-5">
           <h2 className="font-display text-2xl text-gold">Sabores da Semana</h2>
           <p className="mt-2 text-sm text-smoke">
             27 anos de tradicao italiana em cada fatia, com massa de fermentacao

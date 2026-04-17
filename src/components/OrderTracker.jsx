@@ -30,7 +30,7 @@ function OrderTracker({ status = "RECEBIDO" }) {
                     ? "animate-pulse border-gold bg-gold text-black shadow-[0_0_12px_rgba(212,169,77,0.6)]"
                     : done
                       ? "border-gold bg-gold text-black"
-                      : "border-white/25 bg-black/20 text-smoke"
+                      : "border-gray-300 bg-gray-50 text-smoke"
                 }`}
               >
                 {done ? (
@@ -53,7 +53,7 @@ function OrderTracker({ status = "RECEBIDO" }) {
               </span>
               <p
                 className={`font-semibold transition-colors duration-300 ${
-                  active ? "text-gold" : done ? "text-white" : "text-smoke"
+                  active ? "text-gold" : done ? "text-gray-900" : "text-smoke"
                 }`}
               >
                 {step.label}

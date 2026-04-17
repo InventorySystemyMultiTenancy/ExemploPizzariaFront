@@ -59,13 +59,13 @@ function ClientDashboardPage() {
       : orders.filter((o) => o.status === activeFilter);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-6 text-white sm:px-6">
+    <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-6 text-gray-900 sm:px-6">
       <header className="flex items-center justify-between">
         <h1 className="font-display text-3xl text-gold">
           Ola, {user?.name?.split(" ")[0] || "Cliente"}
         </h1>
         <Link
-          className="rounded-xl border border-white/10 px-3 py-2 text-sm transition hover:border-gold/40"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/40"
           to="/"
         >
           Voltar
@@ -82,7 +82,7 @@ function ClientDashboardPage() {
             className={`shrink-0 rounded-2xl border px-4 py-2 text-xs font-semibold transition-all duration-200 ${
               activeFilter === f.id
                 ? "border-gold bg-gold/15 text-gold"
-                : "border-white/10 bg-black/20 text-smoke hover:border-gold/30"
+                : "border-gray-200 bg-gray-50 text-smoke hover:border-gold/30"
             }`}
           >
             {f.label}
@@ -94,7 +94,7 @@ function ClientDashboardPage() {
       {isLoading && (
         <div className="mt-6 animate-pulse space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-white/5" />
+            <div key={i} className="h-20 rounded-2xl bg-gray-50" />
           ))}
         </div>
       )}
@@ -104,7 +104,7 @@ function ClientDashboardPage() {
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
-        <p className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-smoke">
+        <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
           {activeFilter === "TODOS"
             ? "Voce ainda nao possui pedidos."
             : `Nenhum pedido com status "${STATUS_FILTERS.find((f) => f.id === activeFilter)?.label}".`}
@@ -126,7 +126,7 @@ function ClientDashboardPage() {
                 className="flex w-full items-center justify-between px-5 py-4 text-left"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-gray-900">
                     Pedido #{order.id.slice(-6).toUpperCase()}
                   </p>
                   <p className="mt-0.5 text-xs text-smoke">
@@ -169,7 +169,7 @@ function ClientDashboardPage() {
                   isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                <div className="border-t border-gray-200 px-5 pb-5 pt-4">
                   <EstimatedTimeBadge now={new Date(now)} order={order} />
 
                   <OrderTracker status={order.status} />
@@ -178,7 +178,7 @@ function ClientDashboardPage() {
                     {order.items?.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-start justify-between rounded-xl bg-black/20 px-3 py-2"
+                        className="flex items-start justify-between rounded-xl bg-gray-50 px-3 py-2"
                       >
                         <div>
                           <p className="text-sm font-semibold">
@@ -202,7 +202,7 @@ function ClientDashboardPage() {
                     ))}
                   </div>
 
-                  <div className="mt-3 flex justify-between border-t border-white/10 pt-3 text-sm">
+                  <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 text-sm">
                     <span className="text-smoke">Pagamento</span>
                     <span
                       className={

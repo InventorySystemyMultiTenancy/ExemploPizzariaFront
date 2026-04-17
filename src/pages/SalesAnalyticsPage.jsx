@@ -50,7 +50,7 @@ function SalesAnalyticsPage() {
   const maxOrders = Math.max(...Object.values(statusCounts), 1);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 text-white sm:px-6">
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 text-gray-900 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl text-gold">Análise de Vendas</h1>
@@ -61,13 +61,13 @@ function SalesAnalyticsPage() {
         <div className="flex gap-3">
           <Link
             to="/admin"
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm transition hover:border-gold/40"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/40"
           >
             Painel
           </Link>
           <Link
             to="/admin/produtos"
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm transition hover:border-gold/40"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/40"
           >
             Produtos
           </Link>
@@ -79,7 +79,7 @@ function SalesAnalyticsPage() {
           {[...Array(4)].map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-3xl bg-white/5"
+              className="h-32 animate-pulse rounded-3xl bg-gray-50"
             />
           ))}
         </div>
@@ -160,12 +160,12 @@ function SalesAnalyticsPage() {
                 {Object.entries(statusCounts).map(([status, count]) => (
                   <div key={status}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-white">
+                      <span className="text-gray-900">
                         {STATUS_LABEL[status] ?? status}
                       </span>
                       <span className="text-smoke">{count}</span>
                     </div>
-                    <div className="h-3 rounded-full bg-black/30">
+                    <div className="h-3 rounded-full bg-gray-100">
                       <div
                         className="h-3 rounded-full bg-gradient-to-r from-gold to-amber-300"
                         style={{ width: `${(count / maxOrders) * 100}%` }}
@@ -188,13 +188,13 @@ function SalesAnalyticsPage() {
               {topProducts.map((product, index) => (
                 <div
                   key={product.name}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-black/25 px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
                       {index + 1}
                     </span>
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-gray-900">
                       {product.name}
                     </span>
                   </div>

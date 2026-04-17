@@ -24,7 +24,7 @@ function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md transform bg-[#101016] p-4 shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
+        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md transform bg-white p-4 shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -33,7 +33,7 @@ function CartDrawer() {
           <button
             type="button"
             onClick={closeCart}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-smoke"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-smoke"
           >
             Fechar
           </button>
@@ -41,23 +41,23 @@ function CartDrawer() {
 
         <div className="mt-5 space-y-3 overflow-y-auto pb-44">
           {!items.length ? (
-            <div className="rounded-2xl border border-dashed border-white/20 p-6 text-center text-sm text-smoke">
+            <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-smoke">
               Seu carrinho esta vazio.
             </div>
           ) : (
             items.map((item) => (
               <article
                 key={item.key}
-                className="rounded-2xl border border-white/10 bg-black/30 p-3 transition-all duration-200 hover:border-gold/30 hover:bg-black/50"
+                className="rounded-2xl border border-gray-200 bg-gray-100 p-3 transition-all duration-200 hover:border-gold/30 hover:bg-gray-200"
               >
-                <h4 className="font-semibold text-white">{item.title}</h4>
+                <h4 className="font-semibold text-gray-900">{item.title}</h4>
                 <p className="mt-1 text-xs text-smoke">{item.description}</p>
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="h-9 w-9 rounded-xl border border-white/10 text-lg"
+                      className="h-9 w-9 rounded-xl border border-gray-200 text-lg"
                       onClick={() =>
                         updateQuantity(item.key, item.quantity - 1)
                       }
@@ -69,7 +69,7 @@ function CartDrawer() {
                     </span>
                     <button
                       type="button"
-                      className="h-9 w-9 rounded-xl border border-white/10 text-lg"
+                      className="h-9 w-9 rounded-xl border border-gray-200 text-lg"
                       onClick={() =>
                         updateQuantity(item.key, item.quantity + 1)
                       }
@@ -99,7 +99,7 @@ function CartDrawer() {
           )}
         </div>
 
-        <footer className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-[#101016] p-4 sm:p-6">
+        <footer className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 sm:p-6">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-smoke">
               <span>Subtotal</span>
@@ -121,7 +121,7 @@ function CartDrawer() {
             className={`mt-4 block rounded-2xl px-5 py-4 text-center text-base font-bold transition ${
               total
                 ? "bg-gradient-to-r from-gold to-amber-300 text-black"
-                : "pointer-events-none bg-white/10 text-white/30"
+                : "pointer-events-none bg-gray-200 text-gray-400"
             }`}
           >
             Ir para Checkout

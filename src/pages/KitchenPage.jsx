@@ -95,7 +95,7 @@ function OrderCard({
           ? "animate-pulse border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,169,77,0.2)]"
           : eta?.isOverdue
             ? "border-red-500/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
-            : (stage?.color ?? "border-white/10 bg-black/20")
+            : (stage?.color ?? "border-gray-200 bg-gray-50")
       } ${dragging ? "cursor-grabbing opacity-60" : hasNext ? "cursor-grab" : "cursor-default"}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -103,14 +103,14 @@ function OrderCard({
           <p className="text-xs font-bold uppercase tracking-widest text-smoke">
             #{order.id.slice(-6).toUpperCase()}
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-white">
+          <p className="mt-0.5 text-sm font-semibold text-gray-900">
             {order.user?.name ?? "Cliente"}
           </p>
           <p className="text-xs text-smoke">{formatTime(order.createdAt)}</p>
         </div>
         <span
           className={`shrink-0 rounded-xl px-2 py-1 text-xs font-bold ${
-            STAGE_BADGE[order.status] ?? "bg-white/10 text-white"
+            STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"
           }`}
         >
           {order.status.replace(/_/g, " ")}
@@ -133,7 +133,7 @@ function OrderCard({
       </div>
 
       {/* Items */}
-      <ul className="mt-3 space-y-1 border-t border-white/10 pt-3">
+      <ul className="mt-3 space-y-1 border-t border-gray-200 pt-3">
         {order.items?.map((item) => (
           <li key={item.id} className="text-sm">
             {item.type === "MEIO_A_MEIO" ? (
@@ -142,7 +142,7 @@ function OrderCard({
                 {item.secondHalf?.name ?? "?"}
               </span>
             ) : (
-              <span className="text-white">
+              <span className="text-gray-900">
                 {item.product?.name ?? "Pizza"}
               </span>
             )}
@@ -154,7 +154,7 @@ function OrderCard({
       </ul>
 
       {order.notes && (
-        <p className="mt-2 rounded-xl bg-black/30 px-3 py-1.5 text-xs text-smoke">
+        <p className="mt-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs text-smoke">
           Obs: {order.notes}
         </p>
       )}
@@ -164,7 +164,7 @@ function OrderCard({
           type="button"
           disabled={advancing}
           onClick={() => onAdvance(order.id, stage.next)}
-          className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+          className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 py-3 text-sm font-bold text-gray-900 transition hover:opacity-90 disabled:opacity-50"
         >
           {advancing ? "Atualizando..." : NEXT_LABEL[order.status]}
         </button>
@@ -408,7 +408,7 @@ function KitchenPage() {
   }, [stageCounts]);
 
   return (
-    <main className="min-h-screen bg-ink px-4 py-6 text-white sm:px-6">
+    <main className="min-h-screen bg-ink px-4 py-6 text-gray-900 sm:px-6">
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
         <div>
@@ -435,7 +435,7 @@ function KitchenPage() {
           <button
             type="button"
             onClick={() => clearStaffUnreadCount()}
-            className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
           >
             Limpar alertas {unreadCount ? `(${unreadCount})` : ""}
           </button>
@@ -445,7 +445,7 @@ function KitchenPage() {
             className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
               desktopEnabled
                 ? "border-gold/40 bg-gold/10 text-gold"
-                : "border-white/10 bg-black/20 text-smoke"
+                : "border-gray-200 bg-gray-50 text-smoke"
             }`}
           >
             Desktop {desktopEnabled ? "ligado" : "desligado"}
@@ -456,7 +456,7 @@ function KitchenPage() {
             className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
               soundEnabled
                 ? "border-gold/40 bg-gold/10 text-gold"
-                : "border-white/10 bg-black/20 text-smoke"
+                : "border-gray-200 bg-gray-50 text-smoke"
             }`}
           >
             Som {soundEnabled ? "ligado" : "desligado"}
@@ -481,13 +481,13 @@ function KitchenPage() {
               className={`rounded-2xl border p-4 transition-all duration-300 ${
                 changed
                   ? "scale-[1.02] border-gold/50 bg-gold/10 shadow-glow"
-                  : "border-white/10 bg-lacquer/50"
+                  : "border-gray-200 bg-lacquer/50"
               }`}
             >
               <p className="text-xs uppercase tracking-[0.2em] text-smoke">
                 {stage.label}
               </p>
-              <p className="mt-2 font-display text-3xl text-white">
+              <p className="mt-2 font-display text-3xl text-gray-900">
                 {stage.count}
               </p>
               <p className="mt-1 text-xs text-smoke">Pedidos nesta etapa</p>
@@ -521,7 +521,7 @@ function KitchenPage() {
       {isLoading && (
         <div className="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-48 rounded-2xl bg-white/5" />
+            <div key={i} className="h-48 rounded-2xl bg-gray-50" />
           ))}
         </div>
       )}
@@ -576,8 +576,8 @@ function KitchenPage() {
                 }`}
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold text-white">{stage.label}</h2>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-smoke">
+                  <h2 className="font-semibold text-gray-900">{stage.label}</h2>
+                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-smoke">
                     {stageOrders.length}
                   </span>
                 </div>

@@ -99,7 +99,7 @@ function ProductModal({ product, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-gold/20 bg-[#101016] p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-gold/20 bg-white p-6 shadow-2xl">
         <h2 className="font-display text-2xl text-gold">
           {isEdit ? "Editar Produto" : "Novo Produto"}
         </h2>
@@ -113,7 +113,7 @@ function ProductModal({ product, onClose }) {
             <input
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-gold/50"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder="Ex: Calabresa Imperial"
             />
             {errors.name && (
@@ -132,7 +132,7 @@ function ProductModal({ product, onClose }) {
                 setForm((p) => ({ ...p, description: e.target.value }))
               }
               rows={2}
-              className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-gold/50"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder="Breve descrição do sabor..."
             />
           </div>
@@ -147,7 +147,7 @@ function ProductModal({ product, onClose }) {
               onChange={(e) =>
                 setForm((p) => ({ ...p, imageUrl: e.target.value }))
               }
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-gold/50"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
               placeholder="https://..."
             />
             {errors.imageUrl && (
@@ -182,7 +182,7 @@ function ProductModal({ product, onClose }) {
                       min="0"
                       value={price}
                       onChange={(e) => setPrice(size, e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
                       placeholder="0,00"
                     />
                   </div>
@@ -203,7 +203,7 @@ function ProductModal({ product, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-2xl border border-white/10 py-3 text-sm text-smoke transition hover:border-white/30"
+              className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm text-smoke transition hover:border-gray-400"
             >
               Cancelar
             </button>
@@ -245,8 +245,8 @@ function ProductCard({ product, onEdit }) {
     <article
       className={`rounded-2xl border p-4 transition-all duration-200 ${
         product.isActive
-          ? "border-white/10 bg-lacquer/70"
-          : "border-white/5 bg-black/20 opacity-50"
+          ? "border-gray-200 bg-lacquer/70"
+          : "border-gray-100 bg-gray-50 opacity-50"
       }`}
     >
       {product.imageUrl ? (
@@ -257,14 +257,16 @@ function ProductCard({ product, onEdit }) {
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
       ) : (
-        <div className="mb-3 flex h-32 w-full items-center justify-center rounded-xl bg-black/30 text-3xl">
+        <div className="mb-3 flex h-32 w-full items-center justify-center rounded-xl bg-gray-100 text-3xl">
           🍕
         </div>
       )}
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate font-semibold text-white">{product.name}</h3>
+          <h3 className="truncate font-semibold text-gray-900">
+            {product.name}
+          </h3>
           {product.description && (
             <p className="mt-0.5 line-clamp-2 text-xs text-smoke">
               {product.description}
@@ -275,7 +277,7 @@ function ProductCard({ product, onEdit }) {
           className={`shrink-0 rounded-xl px-2 py-1 text-xs font-bold ${
             product.isActive
               ? "bg-green-500/20 text-green-400"
-              : "bg-white/10 text-smoke"
+              : "bg-gray-200 text-smoke"
           }`}
         >
           {product.isActive ? "Ativo" : "Inativo"}
@@ -335,7 +337,7 @@ function AdminProductsPage() {
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-white sm:px-6">
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl text-gold">Produtos</h1>
@@ -346,14 +348,14 @@ function AdminProductsPage() {
         <div className="flex items-center gap-3">
           <Link
             to="/admin"
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm transition hover:border-gold/30"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/30"
           >
             Painel
           </Link>
           <button
             type="button"
             onClick={() => setModal("new")}
-            className="rounded-2xl bg-gradient-to-r from-ember to-red-500 px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
+            className="rounded-2xl bg-gradient-to-r from-ember to-red-500 px-4 py-2 text-sm font-bold text-gray-900 transition hover:opacity-90"
           >
             + Novo Produto
           </button>
@@ -363,7 +365,7 @@ function AdminProductsPage() {
       {isLoading && (
         <div className="mt-6 grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-white/5" />
+            <div key={i} className="h-64 rounded-2xl bg-gray-50" />
           ))}
         </div>
       )}
