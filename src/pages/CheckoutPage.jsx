@@ -320,24 +320,6 @@ function CheckoutPage() {
 }
 
 export default CheckoutPage;
-
-
-const mapItemToApi = (item) => {
-  const payload = item.payload || {};
-
-  if (payload.type === "MEIO_A_MEIO") {
-    return {
-      type: "MEIO_A_MEIO",
-      firstHalfProductId: payload.flavors[0],
-      secondHalfProductId: payload.flavors[1],
-      size: payload.size,
-      quantity: item.quantity,
-    };
-  }
-
-  return {
-    type: "INTEIRA",
-    productId: payload.flavors[0],
     size: payload.size,
     quantity: item.quantity,
   };
