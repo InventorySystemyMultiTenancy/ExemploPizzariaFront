@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 
 const CartContext = createContext(null);
 
-const FREIGHT_BASE = 8;
+const FREIGHT_BASE = 0;
 
 const currency = (value) =>
   value.toLocaleString("pt-BR", {
@@ -57,11 +57,7 @@ export function CartProvider({ children }) {
       return 0;
     }
 
-    if (subtotal >= 90) {
-      return 0;
-    }
-
-    return FREIGHT_BASE + Math.max(0, 12 - items.length * 2);
+    return 0;
   }, [subtotal, items.length]);
 
   const total = subtotal + freight;
