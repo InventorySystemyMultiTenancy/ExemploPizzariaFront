@@ -188,7 +188,8 @@ function ClientDashboardPage() {
                           </p>
                           {item.type === "MEIO_A_MEIO" && (
                             <p className="text-xs text-smoke">
-                              {item.firstHalf?.name} / {item.secondHalf?.name}
+                              {item.firstHalfProduct?.name} /{" "}
+                              {item.secondHalfProduct?.name}
                             </p>
                           )}
                           <p className="text-xs text-smoke">

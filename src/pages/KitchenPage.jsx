@@ -138,8 +138,8 @@ function OrderCard({
           <li key={item.id} className="text-sm">
             {item.type === "MEIO_A_MEIO" ? (
               <span className="text-gold">
-                Meio a Meio — {item.firstHalf?.name ?? "?"} /{" "}
-                {item.secondHalf?.name ?? "?"}
+                Meio a Meio — {item.firstHalfProduct?.name ?? "?"} /{" "}
+                {item.secondHalfProduct?.name ?? "?"}
               </span>
             ) : (
               <span className="text-gray-900">
