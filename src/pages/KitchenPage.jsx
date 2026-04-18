@@ -20,7 +20,13 @@ import {
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
 
-const STAGES = [
+const COLUMNS = [
+  {
+    key: "AGUARDANDO_PAGAMENTO",
+    label: "Aguardando Pagamento",
+    virtual: true,
+    color: "border-amber-500/40 bg-amber-500/10",
+  },
   {
     key: "RECEBIDO",
     label: "Recebido",
@@ -46,6 +52,9 @@ const STAGES = [
     color: "border-green-500/40 bg-green-500/10",
   },
 ];
+
+// Real order statuses (for drag/advance logic)
+const STAGES = COLUMNS.filter((c) => !c.virtual);
 
 const STAGE_BADGE = {
   RECEBIDO: "bg-blue-500/20 text-blue-300",
@@ -80,10 +89,14 @@ function OrderCard({
   dragging,
   onDragStart,
   onDragEnd,
+  onConfirmPayment,
+  onPayLater,
+  confirmingPayment,
 }) {
   const stage = STAGES.find((s) => s.key === order.status);
-  const hasNext = !!stage?.next;
+  const hasNext = !!stage?.next && !onConfirmPayment;
   const eta = getOrderEta(order, now);
+  const isPaymentPending = order.paymentStatus === "PENDENTE";
 
   return (
     <article
@@ -95,7 +108,7 @@ function OrderCard({
           ? "animate-pulse border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,169,77,0.2)]"
           : eta?.isOverdue
             ? "border-red-500/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
-            : (stage?.color ?? "border-gray-200 bg-gray-50")
+            : (stage?.color ?? "border-amber-500/40 bg-amber-500/10")
       } ${dragging ? "cursor-grabbing opacity-60" : hasNext ? "cursor-grab" : "cursor-default"}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -108,13 +121,20 @@ function OrderCard({
           </p>
           <p className="text-xs text-smoke">{formatTime(order.createdAt)}</p>
         </div>
-        <span
-          className={`shrink-0 rounded-xl px-2 py-1 text-xs font-bold ${
-            STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"
-          }`}
-        >
-          {order.status.replace(/_/g, " ")}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span
+            className={`shrink-0 rounded-xl px-2 py-1 text-xs font-bold ${
+              STAGE_BADGE[order.status] ?? "bg-gray-200 text-gray-900"
+            }`}
+          >
+            {order.status.replace(/_/g, " ")}
+          </span>
+          {isPaymentPending && !onConfirmPayment && (
+            <span className="rounded-xl bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+              💰 Pag. pendente
+            </span>
+          )}
+        </div>
       </div>
 
       {isFresh ? (
@@ -123,13 +143,8 @@ function OrderCard({
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="mt-3">
         <EstimatedTimeBadge compact now={now} order={order} />
-        <span
-          className={`text-xs ${eta?.isOverdue ? "font-semibold text-red-300" : "text-smoke"}`}
-        >
-          {eta?.isOverdue ? "Prioridade alta" : "SLA do pedido"}
-        </span>
       </div>
 
       {/* Items */}
@@ -159,6 +174,29 @@ function OrderCard({
         </p>
       )}
 
+      {/* Payment pending column actions */}
+      {onConfirmPayment && (
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            disabled={confirmingPayment}
+            onClick={() => onConfirmPayment(order.id)}
+            className="flex-1 rounded-2xl bg-gradient-to-r from-green-600 to-green-500 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {confirmingPayment ? "..." : "✅ Confirmar Pgto"}
+          </button>
+          <button
+            type="button"
+            disabled={confirmingPayment}
+            onClick={() => onPayLater(order.id)}
+            className="flex-1 rounded-2xl border-2 border-amber-400 bg-amber-50 py-3 text-sm font-bold text-amber-800 transition hover:bg-amber-100 disabled:opacity-50"
+          >
+            {confirmingPayment ? "..." : "⏳ Pagar Depois"}
+          </button>
+        </div>
+      )}
+
+      {/* Normal advance button */}
       {hasNext && (
         <button
           type="button"
@@ -331,6 +369,24 @@ function KitchenPage() {
     onError: () => toast.error("Falha ao atualizar status"),
   });
 
+  const {
+    mutate: setPaymentStatus,
+    variables: paymentVars,
+    isPending: isPaymentPending,
+  } = useMutation({
+    mutationFn: async ({ orderId, paymentStatus, advanceTo }) => {
+      await api.patch(`/orders/${orderId}/payment-status`, { paymentStatus });
+      if (advanceTo) {
+        await api.patch(`/orders/${orderId}/status`, { status: advanceTo });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Atualizado com sucesso");
+    },
+    onError: () => toast.error("Falha ao atualizar"),
+  });
+
   const lastUpdate = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString("pt-BR", {
         hour: "2-digit",
@@ -352,13 +408,27 @@ function KitchenPage() {
         .map((order) => order.id),
     [currentNow, orders],
   );
+  const getColumnOrders = (columnKey) => {
+    if (columnKey === "AGUARDANDO_PAGAMENTO") {
+      return orders.filter(
+        (o) => o.status === "RECEBIDO" && o.paymentStatus === "PENDENTE",
+      );
+    }
+    if (columnKey === "RECEBIDO") {
+      return orders.filter(
+        (o) => o.status === "RECEBIDO" && o.paymentStatus !== "PENDENTE",
+      );
+    }
+    return orders.filter((o) => o.status === columnKey);
+  };
+
   const stageCounts = useMemo(
     () =>
-      STAGES.map((stage) => ({
-        ...stage,
-        count: orders.filter((order) => order.status === stage.key).length,
+      COLUMNS.map((col) => ({
+        ...col,
+        count: getColumnOrders(col.key).length,
       })),
-    [orders],
+    [orders], // getColumnOrders is inline and only depends on orders
   );
   const previousStageCountsRef = useRef({});
   const [changedStageKeys, setChangedStageKeys] = useState([]);
@@ -532,39 +602,33 @@ function KitchenPage() {
 
       {/* Kanban columns */}
       {!isLoading && !isError && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {STAGES.map((stage) => {
-            const stageOrders = orders
-              .filter((o) => o.status === stage.key)
-              .sort((firstOrder, secondOrder) =>
-                compareOrdersByUrgency(firstOrder, secondOrder, currentNow),
-              );
-            const canDropHere = draggedOrder?.nextStatus === stage.key;
-            const isDropActive = activeDropStage === stage.key && canDropHere;
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          {COLUMNS.map((col) => {
+            const isVirtual = col.virtual;
+            const stageOrders = getColumnOrders(col.key).sort((a, b) =>
+              compareOrdersByUrgency(a, b, currentNow),
+            );
+            const canDropHere =
+              !isVirtual && draggedOrder?.nextStatus === col.key;
+            const isDropActive = activeDropStage === col.key && canDropHere;
 
             return (
               <section
-                key={stage.key}
+                key={col.key}
                 onDragOver={(event) => {
-                  if (!canDropHere) {
-                    return;
-                  }
-
+                  if (!canDropHere) return;
                   event.preventDefault();
-                  setActiveDropStage(stage.key);
+                  setActiveDropStage(col.key);
                 }}
                 onDragLeave={() => {
-                  if (activeDropStage === stage.key) {
-                    setActiveDropStage(null);
-                  }
+                  if (activeDropStage === col.key) setActiveDropStage(null);
                 }}
                 onDrop={() => {
-                  if (!draggedOrder || draggedOrder.nextStatus !== stage.key) {
+                  if (!draggedOrder || draggedOrder.nextStatus !== col.key) {
                     handleDragEnd();
                     return;
                   }
-
-                  advance({ orderId: draggedOrder.id, status: stage.key });
+                  advance({ orderId: draggedOrder.id, status: col.key });
                   handleDragEnd();
                 }}
                 className={`rounded-3xl transition-all duration-200 ${
@@ -576,7 +640,7 @@ function KitchenPage() {
                 }`}
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">{stage.label}</h2>
+                  <h2 className="font-semibold text-gray-900">{col.label}</h2>
                   <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-smoke">
                     {stageOrders.length}
                   </span>
@@ -584,7 +648,7 @@ function KitchenPage() {
 
                 {isDropActive ? (
                   <div className="mb-3 rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-gold">
-                    Solte aqui para mover para {stage.label}
+                    Solte aqui para mover para {col.label}
                   </div>
                 ) : null}
 
@@ -604,10 +668,32 @@ function KitchenPage() {
                         advancing={
                           isPending && advancingVars?.orderId === order.id
                         }
-                        onDragStart={handleDragStart}
+                        onDragStart={isVirtual ? () => {} : handleDragStart}
                         onDragEnd={handleDragEnd}
                         onAdvance={(orderId, status) =>
                           advance({ orderId, status })
+                        }
+                        onConfirmPayment={
+                          isVirtual
+                            ? (orderId) =>
+                                setPaymentStatus({
+                                  orderId,
+                                  paymentStatus: "APROVADO",
+                                })
+                            : undefined
+                        }
+                        onPayLater={
+                          isVirtual
+                            ? (orderId) =>
+                                setPaymentStatus({
+                                  orderId,
+                                  paymentStatus: "PENDENTE",
+                                  advanceTo: "PREPARANDO",
+                                })
+                            : undefined
+                        }
+                        confirmingPayment={
+                          isPaymentPending && paymentVars?.orderId === order.id
                         }
                       />
                     ))
