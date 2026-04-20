@@ -134,6 +134,7 @@ function CheckoutPage() {
         cep,
         numero: numero.trim(),
         cidade: cidade.trim() || "São Paulo",
+        rua: rua.trim() || undefined,
         complemento: complemento.trim() || undefined,
       });
       setFreight(res.data?.data);
