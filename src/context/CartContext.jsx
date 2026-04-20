@@ -1,9 +1,10 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 const CartContext = createContext(null);
 
 const FREIGHT_BASE = 0;
+const CART_STORAGE_KEY = "pizzaria_cart";
 
 const currency = (value) =>
   value.toLocaleString("pt-BR", {
@@ -11,9 +12,23 @@ const currency = (value) =>
     currency: "BRL",
   });
 
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => loadCartFromStorage());
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Persiste o carrinho no localStorage sempre que ele mudar
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const addItem = (item) => {
     setItems((prev) => {
