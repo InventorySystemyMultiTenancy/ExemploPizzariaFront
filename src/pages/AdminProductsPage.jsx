@@ -113,7 +113,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
       <div className="relative z-10 my-auto w-full max-w-lg rounded-3xl border border-gold/20 bg-white p-6 shadow-2xl">
         <h2 className="font-display text-2xl text-gold">
           {isEdit ? "Editar Produto" : "Novo Produto"}
