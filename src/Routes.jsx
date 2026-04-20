@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AdminPanelPage from "./pages/AdminPanelPage.jsx";
 import AdminProductsPage from "./pages/AdminProductsPage.jsx";
+import AdminOrderHistoryPage from "./pages/AdminOrderHistoryPage.jsx";
 import SalesAnalyticsPage from "./pages/SalesAnalyticsPage.jsx";
 import CardapioPage from "./pages/CardapioPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -45,6 +46,7 @@ function AppRoutes() {
         <Route path="/admin" element={<AdminPanelPage />} />
         <Route path="/admin/produtos" element={<AdminProductsPage />} />
         <Route path="/admin/vendas" element={<SalesAnalyticsPage />} />
+        <Route path="/admin/historico" element={<AdminOrderHistoryPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

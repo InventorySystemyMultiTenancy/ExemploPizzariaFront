@@ -145,6 +145,18 @@ function AdminPanelPage() {
             Ver pedidos ativos e avançar status
           </p>
         </Link>
+        <Link
+          to="/admin/historico"
+          className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
+        >
+          <p className="text-2xl">📋</p>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            Histórico de Pedidos
+          </h2>
+          <p className="mt-1 text-xs text-smoke">
+            Todos os pedidos, cancelamentos e estornos
+          </p>
+        </Link>
       </div>
 
       {isLoading ? (
