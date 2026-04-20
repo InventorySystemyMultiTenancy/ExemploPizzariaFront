@@ -342,7 +342,15 @@ function NavAuthLinks() {
         <>
           <Link
             className="text-sm text-gray-500 transition-colors hover:text-rosso"
-            to={user?.role === "ADMIN" ? "/admin" : "/dashboard"}
+            to={
+              user?.role === "ADMIN" || user?.role === "FUNCIONARIO"
+                ? "/admin"
+                : user?.role === "MOTOBOY"
+                  ? "/motoboy"
+                  : user?.role === "COZINHA"
+                    ? "/cozinha"
+                    : "/dashboard"
+            }
           >
             Painel
           </Link>
