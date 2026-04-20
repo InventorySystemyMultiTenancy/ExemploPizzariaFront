@@ -133,12 +133,13 @@ function CheckoutPage() {
       const res = await api.post("/delivery/calculate", {
         cep,
         numero: numero.trim(),
+        cidade: cidade.trim() || "São Paulo",
         complemento: complemento.trim() || undefined,
       });
       setFreight(res.data?.data);
     } catch (err) {
       const msg =
-        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
         "Não foi possível calcular o frete. Verifique o endereço.";
       setFreightError(msg);
     } finally {
@@ -150,7 +151,7 @@ function CheckoutPage() {
     .filter(Boolean)
     .join(", ");
 
-  const totalWithFreight = subtotal + (freight?.fee ?? 0);
+  const totalWithFreight = subtotal + (freight?.valorFreteNumerico ?? 0);
 
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
@@ -160,7 +161,7 @@ function CheckoutPage() {
           .filter(Boolean)
           .join(" | "),
         paymentMethod,
-        deliveryFee: freight?.fee ?? undefined,
+        deliveryFee: freight?.valorFreteNumerico ?? undefined,
         deliveryLat: freight?.lat ?? undefined,
         deliveryLon: freight?.lon ?? undefined,
         items: items.map(mapItemToApi),
@@ -399,10 +400,11 @@ function CheckoutPage() {
               {freight && (
                 <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
                   <p className="text-sm font-bold text-green-800">
-                    Frete calculado: {currency(freight.fee)}
+                    Frete: {freight.valorFrete}
                   </p>
                   <p className="mt-0.5 text-xs text-green-700">
-                    Distância aproximada: {freight.distanceKm} km
+                    Distância: {freight.distanciaKm} km · Tempo estimado: ~
+                    {freight.tempoEstimado} min
                   </p>
                   <p
                     className="mt-0.5 text-xs text-green-600 line-clamp-1"
@@ -447,7 +449,7 @@ function CheckoutPage() {
                   <span
                     className={freight ? "font-semibold text-green-700" : ""}
                   >
-                    {freight ? currency(freight.fee) : "— calcule o frete"}
+                    {freight ? freight.valorFrete : "— calcule o frete"}
                   </span>
                 </div>
                 <div className="flex justify-between pt-1 text-base font-bold text-gold">
