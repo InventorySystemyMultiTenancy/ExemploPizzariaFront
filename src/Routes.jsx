@@ -10,6 +10,7 @@ import ClientDashboardPage from "./pages/ClientDashboardPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import KitchenPage from "./pages/KitchenPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import MotoboyPage from "./pages/MotoboyPage.jsx";
 import PrivateRoute from "./routes/PrivateRoute.js";
 
 function AppRoutes() {
@@ -47,6 +48,14 @@ function AppRoutes() {
         <Route path="/admin/produtos" element={<AdminProductsPage />} />
         <Route path="/admin/vendas" element={<SalesAnalyticsPage />} />
         <Route path="/admin/historico" element={<AdminOrderHistoryPage />} />
+      </Route>
+
+      <Route
+        element={
+          <PrivateRoute allowedRoles={["MOTOBOY", "ADMIN", "FUNCIONARIO"]} />
+        }
+      >
+        <Route path="/motoboy" element={<MotoboyPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

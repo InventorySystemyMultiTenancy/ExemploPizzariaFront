@@ -1,12 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 
 const POLL_INTERVAL_MS = 4000;
+
+const currency = (v) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const formatCep = (v) => {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+};
 
 const mapItemToApi = (item) => {
   const payload = item.payload || {};
@@ -30,12 +38,28 @@ const mapItemToApi = (item) => {
 function CheckoutPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { items, formatted, total, clearCart } = useCart();
+  const { items, subtotal, clearCart } = useCart();
   const [paymentMode, setPaymentMode] = useState("online");
   const [waitingOrderId, setWaitingOrderId] = useState(null);
-  const [pollStatus, setPollStatus] = useState("PENDENTE");
   const pollRef = useRef(null);
 
+  // Address
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [referencia, setReferencia] = useState("");
+  const [rua, setRua] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [notes, setNotes] = useState("");
+
+  // Freight
+  const [freight, setFreight] = useState(null);
+  const [freightLoading, setFreightLoading] = useState(false);
+  const [freightError, setFreightError] = useState("");
+  const [pollStatus, setPollStatus] = useState("PENDENTE");
+
+  // Payment polling
   useEffect(() => {
     if (!waitingOrderId) return;
     const poll = async () => {
@@ -63,12 +87,82 @@ function CheckoutPage() {
     return () => clearInterval(pollRef.current);
   }, [waitingOrderId, clearCart, navigate]);
 
+  // ViaCEP auto-fill
+  const fetchViaCep = useCallback(async (rawCep) => {
+    const clean = rawCep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setFreightError("CEP não encontrado.");
+        return;
+      }
+      setRua(data.logradouro || "");
+      setBairro(data.bairro || "");
+      setCidade(data.localidade || "");
+      setFreightError("");
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const handleCepChange = (e) => {
+    const formatted = formatCep(e.target.value);
+    setCep(formatted);
+    setFreight(null);
+    if (formatted.replace(/\D/g, "").length === 8) {
+      fetchViaCep(formatted);
+    }
+  };
+
+  const calculateFreight = async () => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) {
+      setFreightError("Informe um CEP válido com 8 dígitos.");
+      return;
+    }
+    if (!numero.trim()) {
+      setFreightError("Informe o número do endereço.");
+      return;
+    }
+    setFreightLoading(true);
+    setFreightError("");
+    setFreight(null);
+    try {
+      const res = await api.post("/delivery/calculate", {
+        cep,
+        numero: numero.trim(),
+        complemento: complemento.trim() || undefined,
+      });
+      setFreight(res.data?.data);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        "Não foi possível calcular o frete. Verifique o endereço.";
+      setFreightError(msg);
+    } finally {
+      setFreightLoading(false);
+    }
+  };
+
+  const fullAddress = [rua, numero, complemento, bairro, cidade]
+    .filter(Boolean)
+    .join(", ");
+
+  const totalWithFreight = subtotal + (freight?.fee ?? 0);
+
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
       const response = await api.post("/orders", {
-        deliveryAddress: user?.address || "Endereço não informado",
-        notes: "",
+        deliveryAddress: fullAddress || "Endereço não informado",
+        notes: [notes, referencia ? `Ref: ${referencia}` : ""]
+          .filter(Boolean)
+          .join(" | "),
         paymentMethod,
+        deliveryFee: freight?.fee ?? undefined,
+        deliveryLat: freight?.lat ?? undefined,
+        deliveryLon: freight?.lon ?? undefined,
         items: items.map(mapItemToApi),
       });
       return response.data?.data || response.data;
@@ -107,6 +201,10 @@ function CheckoutPage() {
   const isLoading =
     createOrderMutation.isPending || preferenceMutation.isPending;
 
+  const canConfirm =
+    isAuthenticated && items.length > 0 && totalWithFreight > 0 && !isLoading;
+
+  // Waiting for payment screen
   if (waitingOrderId) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-4 text-gray-900">
@@ -147,11 +245,6 @@ function CheckoutPage() {
             Esta página atualiza automaticamente a cada poucos segundos.
           </p>
         </div>
-        <img
-          src="/logo-fellice.png"
-          alt="Pizzaria Fellice"
-          className="mt-8 h-10 w-auto opacity-40"
-        />
       </main>
     );
   }
@@ -174,129 +267,266 @@ function CheckoutPage() {
           Seu carrinho está vazio.
         </p>
       ) : (
-        <div className="mt-2 grid gap-6 sm:grid-cols-2">
-          <div className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
-            <h2 className="font-display text-xl text-gold">Resumo</h2>
-            <ul className="mt-4 space-y-3 text-sm">
-              {items.map((item) => (
-                <li
-                  key={item.key}
-                  className="flex items-start justify-between gap-3"
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left: Address + Freight */}
+          <section className="space-y-4">
+            <div className="rounded-3xl border border-gold/20 bg-white p-5">
+              <h2 className="font-display text-xl text-gold">
+                Endereço de Entrega
+              </h2>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {/* CEP */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    CEP *
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    value={cep}
+                    onChange={handleCepChange}
+                    maxLength={9}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Número */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Número *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 123"
+                    value={numero}
+                    onChange={(e) => {
+                      setNumero(e.target.value);
+                      setFreight(null);
+                    }}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Rua */}
+                <div className="col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Rua
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Preenchido automaticamente pelo CEP"
+                    value={rua}
+                    onChange={(e) => setRua(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Complemento */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Complemento
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Apto, bloco, casa..."
+                    value={complemento}
+                    onChange={(e) => setComplemento(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Bairro */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Bairro
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Preenchido pelo CEP"
+                    value={bairro}
+                    onChange={(e) => setBairro(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Referência */}
+                <div className="col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Ponto de referência
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: próximo ao mercado, portão azul..."
+                    value={referencia}
+                    onChange={(e) => setReferencia(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+
+                {/* Obs */}
+                <div className="col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                    Observações do pedido
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Ex: sem cebola, borda recheada..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Calculate freight */}
+              <button
+                type="button"
+                disabled={freightLoading}
+                onClick={calculateFreight}
+                className="mt-4 w-full rounded-2xl bg-rosso py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
+              >
+                {freightLoading ? "Calculando frete..." : "Calcular Frete 🛵"}
+              </button>
+
+              {freightError && (
+                <p className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {freightError}
+                </p>
+              )}
+
+              {freight && (
+                <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+                  <p className="text-sm font-bold text-green-800">
+                    Frete calculado: {currency(freight.fee)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-green-700">
+                    Distância aproximada: {freight.distanceKm} km
+                  </p>
+                  <p
+                    className="mt-0.5 text-xs text-green-600 line-clamp-1"
+                    title={freight.displayName}
+                  >
+                    📍 {freight.displayName}
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Right: Summary + Payment */}
+          <section className="space-y-4">
+            <div className="rounded-3xl border border-gold/20 bg-white p-5">
+              <h2 className="font-display text-xl text-gold">Resumo</h2>
+              <ul className="mt-4 space-y-2 text-sm">
+                {items.map((item) => (
+                  <li
+                    key={item.key}
+                    className="flex items-start justify-between gap-3"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-smoke">{item.description}</p>
+                    </div>
+                    <p className="shrink-0 font-semibold text-gold">
+                      x{item.quantity}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 border-t border-gray-100 pt-4 space-y-1 text-sm">
+                <div className="flex justify-between text-smoke">
+                  <span>Subtotal</span>
+                  <span>{currency(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-smoke">
+                  <span>Frete</span>
+                  <span
+                    className={freight ? "font-semibold text-green-700" : ""}
+                  >
+                    {freight ? currency(freight.fee) : "— calcule o frete"}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 text-base font-bold text-gold">
+                  <span>Total</span>
+                  <span>{currency(totalWithFreight)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-gold/20 bg-white p-5">
+              <h2 className="font-display text-xl text-gold">Pagamento</h2>
+              <div className="mt-3 flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode("online")}
+                  className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                    paymentMode === "online"
+                      ? "bg-rosso text-white shadow"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
-                  <div>
-                    <p className="font-semibold">{item.title}</p>
-                    <p className="text-xs text-smoke">{item.description}</p>
-                  </div>
-                  <p className="font-semibold text-gold">x{item.quantity}</p>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-5 border-t border-gray-200 pt-4 text-sm">
-              <div className="flex justify-between text-smoke">
-                <span>Subtotal</span>
-                <span>{formatted.subtotal}</span>
+                  💳 Pagar Online
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode("presencial")}
+                  className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
+                    paymentMode === "presencial"
+                      ? "bg-white text-gray-900 shadow"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  💵 Pagar na Entrega
+                </button>
               </div>
-              <div className="mt-1 flex justify-between text-smoke">
-                <span>Frete</span>
-                <span>{formatted.freight}</span>
-              </div>
-              <div className="mt-2 flex justify-between text-lg font-bold text-gold">
-                <span>Total</span>
-                <span>{formatted.total}</span>
-              </div>
-            </div>
-            {user?.address && (
-              <p className="mt-4 rounded-xl bg-gray-50 px-3 py-2 text-xs text-smoke">
-                📍 {user.address}
-              </p>
-            )}
-          </div>
 
-          <div className="flex flex-col gap-4">
-            <h2 className="font-display text-xl text-gold">Pagamento</h2>
-            <div className="flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
-              <button
-                type="button"
-                onClick={() => setPaymentMode("online")}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
-                  paymentMode === "online"
-                    ? "bg-rosso text-white shadow"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                💳 Pagar Online
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMode("presencial")}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition ${
-                  paymentMode === "presencial"
-                    ? "bg-white text-gray-900 shadow"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                💵 Pagar Presencial
-              </button>
+              {paymentMode === "online" ? (
+                <div className="mt-3 rounded-2xl border border-gold/20 bg-gray-50 p-4">
+                  <img
+                    src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.71/mercadopago/logo__large@2x.png"
+                    alt="Mercado Pago"
+                    className="h-5 w-auto"
+                  />
+                  <ul className="mt-3 space-y-1 text-xs text-smoke">
+                    <li>✅ Pix, crédito, débito aceitos</li>
+                    <li>✅ Preparo inicia automaticamente após confirmação</li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="mt-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
+                  <p className="text-xs font-bold text-amber-800">
+                    ⚠️ O preparo só inicia após confirmação do pagamento pela
+                    equipe.
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700">
+                    Aceitos: dinheiro, cartão na maquininha.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {paymentMode === "online" ? (
-              <div className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5">
-                <img
-                  src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.71/mercadopago/logo__large@2x.png"
-                  alt="Mercado Pago"
-                  className="h-6 w-auto"
-                />
-                <p className="mt-3 text-sm text-smoke">
-                  Pague com Pix, cartão de crédito ou débito via Mercado Pago.
-                  Uma nova aba será aberta para o pagamento.
-                </p>
-                <ul className="mt-3 space-y-1 text-xs text-smoke">
-                  <li>✅ Pagamento 100% seguro</li>
-                  <li>✅ Pix, crédito, débito aceitos</li>
-                  <li>✅ Preparo inicia automaticamente após confirmação</li>
-                </ul>
-              </div>
-            ) : (
-              <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5">
-                <p className="text-sm font-bold text-amber-800">
-                  ⚠️ Atenção — leia antes de confirmar
-                </p>
-                <p className="mt-2 text-sm text-amber-700">
-                  O pagamento presencial é cobrado pelo entregador ou no balcão
-                  no momento da entrega.
-                </p>
-                <p className="mt-3 rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900">
-                  🚫 O preparo do seu pedido{" "}
-                  <span className="underline">só começa</span> depois que o
-                  pagamento for confirmado por nossa equipe. Pedidos sem
-                  pagamento confirmado serão cancelados.
-                </p>
-                <p className="mt-3 text-xs text-amber-600">
-                  Aceitamos: dinheiro, cartão na maquininha.
-                </p>
-              </div>
-            )}
-          </div>
+            <button
+              type="button"
+              disabled={!canConfirm}
+              onClick={
+                paymentMode === "online"
+                  ? handleOnlineCheckout
+                  : handlePresencialCheckout
+              }
+              className="w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading
+                ? "Processando..."
+                : paymentMode === "online"
+                  ? "Pagar com Mercado Pago →"
+                  : "Confirmar Pedido →"}
+            </button>
+          </section>
         </div>
-      )}
-
-      {items.length > 0 && (
-        <button
-          type="button"
-          disabled={isLoading || !isAuthenticated || !total}
-          onClick={
-            paymentMode === "online"
-              ? handleOnlineCheckout
-              : handlePresencialCheckout
-          }
-          className="mt-6 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isLoading
-            ? "Processando..."
-            : paymentMode === "online"
-              ? "Pagar com Mercado Pago →"
-              : "Confirmar Pedido Presencial"}
-        </button>
       )}
     </main>
   );

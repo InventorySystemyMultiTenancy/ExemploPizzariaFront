@@ -1,0 +1,168 @@
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api.js";
+
+const currency = (v) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const itemLabel = (item) => {
+  if (item.type === "MEIO_A_MEIO") {
+    const a = item.firstHalfProduct?.name ?? "—";
+    const b = item.secondHalfProduct?.name ?? "—";
+    return `${item.size} — Meio a Meio: ${a} / ${b}`;
+  }
+  return `${item.size} — ${item.product?.name ?? "—"}`;
+};
+
+function MotoboyPage() {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["motoboy-orders"],
+    queryFn: async () => {
+      const res = await api.get("/motoboy/orders");
+      return res.data?.data ?? [];
+    },
+    refetchInterval: 20_000,
+  });
+
+  const orders = data ?? [];
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="font-display text-2xl font-bold text-gray-900">
+          🛵 Entregas
+        </h1>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-gray-400"
+        >
+          Atualizar
+        </button>
+      </div>
+
+      {isLoading && (
+        <p className="mt-8 text-center text-sm text-gray-500">Carregando...</p>
+      )}
+
+      {isError && (
+        <p className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Erro ao carregar pedidos. Tente atualizar.
+        </p>
+      )}
+
+      {!isLoading && !isError && orders.length === 0 && (
+        <div className="mt-12 text-center">
+          <p className="text-4xl">🍕</p>
+          <p className="mt-3 text-sm font-semibold text-gray-500">
+            Nenhum pedido pronto para entrega no momento.
+          </p>
+          <p className="mt-1 text-xs text-gray-400">
+            Esta página atualiza automaticamente a cada 20 segundos.
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <article
+            key={order.id}
+            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-bold text-gray-900">{order.user?.name}</p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Pedido #{order.id.slice(-8).toUpperCase()}
+                </p>
+              </div>
+              {order.deliveryFee != null && (
+                <span className="shrink-0 rounded-xl bg-green-100 px-3 py-1 text-sm font-bold text-green-800">
+                  Frete {currency(order.deliveryFee)}
+                </span>
+              )}
+            </div>
+
+            {/* Items */}
+            <ul className="mt-4 space-y-1">
+              {order.items.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <span className="text-gray-400">×{item.quantity}</span>
+                  <span>{itemLabel(item)}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Address */}
+            <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <p className="text-xs font-semibold text-gray-500">Endereço</p>
+              <p className="mt-1 text-sm text-gray-800">
+                {order.deliveryAddress}
+              </p>
+            </div>
+
+            {/* Total */}
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-gray-500">Total do pedido</span>
+              <span className="font-bold text-gray-900">
+                {currency(order.total)}
+              </span>
+            </div>
+
+            {/* Navigation buttons */}
+            {order.deliveryLat != null && order.deliveryLon != null ? (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${order.deliveryLat},${order.deliveryLon}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                  </svg>
+                  Google Maps
+                </a>
+                <a
+                  href={`https://waze.com/ul?ll=${order.deliveryLat},${order.deliveryLon}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 py-3 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm0 2c5.5 0 10 4.5 10 10S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2zm-.8 5v5.2l4 2.4-.8 1.2-4.7-2.8V7h1.5z" />
+                  </svg>
+                  Waze
+                </a>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <a
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(order.deliveryAddress)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
+                >
+                  Buscar endereço no Google Maps
+                </a>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+export default MotoboyPage;
