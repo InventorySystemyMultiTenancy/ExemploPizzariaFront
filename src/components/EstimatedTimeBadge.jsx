@@ -1,11 +1,11 @@
 import { formatExpectedTime, getOrderEta } from "../lib/orderEta.js";
 
 const TONE_STYLES = {
-  info: "border-sky-500/30 bg-sky-500/10 text-sky-200",
-  warning: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  danger: "border-red-500/30 bg-red-500/10 text-red-200",
-  success: "border-green-500/30 bg-green-500/10 text-green-200",
-  neutral: "border-gray-200 bg-gray-50 text-smoke",
+  info: "border-sky-300 bg-sky-100 text-sky-700",
+  warning: "border-amber-300 bg-amber-100 text-amber-700",
+  danger: "border-red-300 bg-red-100 text-red-700",
+  success: "border-green-300 bg-green-100 text-green-700",
+  neutral: "border-gray-300 bg-gray-100 text-gray-700",
 };
 
 function EstimatedTimeBadge({ order, now, compact = false }) {
