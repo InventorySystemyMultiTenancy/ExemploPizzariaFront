@@ -104,10 +104,17 @@ function OrderCard({
   motoboys = [],
   onAssignMotoboy,
   assigningMotoboy,
+  onConfirmDelivery,
+  confirmingDelivery,
 }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
   const stage = STAGES.find((s) => s.key === order.status);
-  const hasNext = !!stage?.next && !onConfirmPayment;
+  const needsCodeConfirm =
+    order.status === "SAIU_PARA_ENTREGA" &&
+    !order.isPickup &&
+    !!onConfirmDelivery;
+  const hasNext = !!stage?.next && !onConfirmPayment && !needsCodeConfirm;
   const eta = getOrderEta(order, now);
   const isPaymentPending = order.paymentStatus === "PENDENTE";
 
@@ -236,6 +243,41 @@ function OrderCard({
         >
           {advanceLabel}
         </button>
+      )}
+
+      {/* Delivery confirmation code input */}
+      {needsCodeConfirm && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
+            📍 Código do cliente
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={deliveryCodeInput}
+              onChange={(e) =>
+                setDeliveryCodeInput(
+                  e.target.value.replace(/\D/g, "").slice(0, 4),
+                )
+              }
+              placeholder="0000"
+              className="w-24 rounded-xl border border-gray-300 bg-white px-3 py-2 text-center text-lg font-bold tracking-widest focus:border-green-400 focus:outline-none"
+            />
+            <button
+              type="button"
+              disabled={deliveryCodeInput.length !== 4 || confirmingDelivery}
+              onClick={() => {
+                onConfirmDelivery(order.id, deliveryCodeInput);
+                setDeliveryCodeInput("");
+              }}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              {confirmingDelivery ? "Confirmando..." : "✓ Confirmar Entrega"}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Motoboy assignment — delivery orders only */}
@@ -512,6 +554,24 @@ function KitchenPage() {
       toast.success("Motoboy atribuído");
     },
     onError: () => toast.error("Falha ao atribuir motoboy"),
+  });
+
+  const {
+    mutate: confirmDelivery,
+    variables: deliveryConfirmVars,
+    isPending: isConfirmingDelivery,
+  } = useMutation({
+    mutationFn: async ({ orderId, code }) => {
+      await api.post(`/orders/${orderId}/confirm-delivery`, { code });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Entrega confirmada!");
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message ?? "Código inválido";
+      toast.error(msg);
+    },
   });
 
   const {
@@ -877,6 +937,16 @@ function KitchenPage() {
                         }
                         assigningMotoboy={
                           isAssigning && assignVars?.orderId === order.id
+                        }
+                        onConfirmDelivery={
+                          !order.isPickup
+                            ? (orderId, code) =>
+                                confirmDelivery({ orderId, code })
+                            : undefined
+                        }
+                        confirmingDelivery={
+                          isConfirmingDelivery &&
+                          deliveryConfirmVars?.orderId === order.id
                         }
                       />
                     ))

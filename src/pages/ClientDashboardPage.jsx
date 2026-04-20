@@ -218,6 +218,24 @@ function ClientDashboardPage() {
 
                   <OrderTracker status={order.status} />
 
+                  {/* Delivery code — shown while order is out for delivery */}
+                  {order.deliveryCode &&
+                    order.status === "SAIU_PARA_ENTREGA" &&
+                    !order.isPickup && (
+                      <div className="mt-4 rounded-2xl border-2 border-amber-400/60 bg-amber-50 px-4 py-3 text-center">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-700">
+                          Código de confirmação de entrega
+                        </p>
+                        <p className="font-display text-4xl font-bold tracking-[0.3em] text-amber-800">
+                          {order.deliveryCode}
+                        </p>
+                        <p className="mt-1 text-[11px] text-amber-600">
+                          Informe este código ao motoboy para confirmar o
+                          recebimento
+                        </p>
+                      </div>
+                    )}
+
                   <div className="mt-4 space-y-2">
                     {order.items?.map((item) => (
                       <div
