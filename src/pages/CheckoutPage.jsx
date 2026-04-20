@@ -58,6 +58,7 @@ function CheckoutPage() {
   const [freightLoading, setFreightLoading] = useState(false);
   const [freightError, setFreightError] = useState("");
   const [pollStatus, setPollStatus] = useState("PENDENTE");
+  const [deliveryType, setDeliveryType] = useState("entrega"); // "entrega" | "retirada"
 
   // Payment polling
   useEffect(() => {
@@ -148,11 +149,18 @@ function CheckoutPage() {
     }
   };
 
-  const fullAddress = [rua, numero, complemento, bairro, cidade]
-    .filter(Boolean)
-    .join(", ");
+  const fullAddress =
+    deliveryType === "retirada"
+      ? "Retirada no local"
+      : [rua, numero, complemento, bairro, cidade].filter(Boolean).join(", ");
 
-  const totalWithFreight = subtotal + (freight?.valorFreteNumerico ?? 0);
+  const effectiveFreight =
+    deliveryType === "retirada"
+      ? { valorFreteNumerico: 0, valorFrete: "R$\u00a00,00" }
+      : freight;
+
+  const totalWithFreight =
+    subtotal + (effectiveFreight?.valorFreteNumerico ?? 0);
 
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
@@ -162,9 +170,9 @@ function CheckoutPage() {
           .filter(Boolean)
           .join(" | "),
         paymentMethod,
-        deliveryFee: freight?.valorFreteNumerico ?? undefined,
-        deliveryLat: freight?.lat ?? undefined,
-        deliveryLon: freight?.lon ?? undefined,
+        deliveryFee: effectiveFreight?.valorFreteNumerico ?? undefined,
+        deliveryLat: effectiveFreight?.lat ?? undefined,
+        deliveryLon: effectiveFreight?.lon ?? undefined,
         items: items.map(mapItemToApi),
       });
       return response.data?.data || response.data;
@@ -204,7 +212,11 @@ function CheckoutPage() {
     createOrderMutation.isPending || preferenceMutation.isPending;
 
   const canConfirm =
-    isAuthenticated && items.length > 0 && totalWithFreight > 0 && !isLoading;
+    isAuthenticated &&
+    items.length > 0 &&
+    subtotal > 0 &&
+    !isLoading &&
+    (deliveryType === "retirada" || freight !== null);
 
   // Waiting for payment screen
   if (waitingOrderId) {
@@ -273,147 +285,188 @@ function CheckoutPage() {
           {/* Left: Address + Freight */}
           <section className="space-y-4">
             <div className="rounded-3xl border border-gold/20 bg-white p-5">
-              <h2 className="font-display text-xl text-gold">
-                Endereço de Entrega
-              </h2>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {/* CEP */}
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    CEP *
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="00000-000"
-                    value={cep}
-                    onChange={handleCepChange}
-                    maxLength={9}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Número */}
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Número *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 123"
-                    value={numero}
-                    onChange={(e) => {
-                      setNumero(e.target.value);
-                      setFreight(null);
-                    }}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Rua */}
-                <div className="col-span-2">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Rua
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Preenchido automaticamente pelo CEP"
-                    value={rua}
-                    onChange={(e) => setRua(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Complemento */}
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Complemento
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Apto, bloco, casa..."
-                    value={complemento}
-                    onChange={(e) => setComplemento(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Bairro */}
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Bairro
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Preenchido pelo CEP"
-                    value={bairro}
-                    onChange={(e) => setBairro(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Referência */}
-                <div className="col-span-2">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Ponto de referência
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: próximo ao mercado, portão azul..."
-                    value={referencia}
-                    onChange={(e) => setReferencia(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
-
-                {/* Obs */}
-                <div className="col-span-2">
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
-                    Observações do pedido
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Ex: sem cebola, borda recheada..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
-                  />
-                </div>
+              {/* Tipo de entrega */}
+              <div className="mb-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType("entrega")}
+                  className={`flex-1 rounded-2xl border py-3 text-sm font-bold transition ${
+                    deliveryType === "entrega"
+                      ? "border-rosso bg-rosso text-white"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
+                  }`}
+                >
+                  🛵 Entrega
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType("retirada")}
+                  className={`flex-1 rounded-2xl border py-3 text-sm font-bold transition ${
+                    deliveryType === "retirada"
+                      ? "border-green-600 bg-green-600 text-white"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
+                  }`}
+                >
+                  🏠 Retirada no local
+                </button>
               </div>
 
-              {/* Calculate freight */}
-              <button
-                type="button"
-                disabled={freightLoading}
-                onClick={calculateFreight}
-                className="mt-4 w-full rounded-2xl bg-rosso py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
-              >
-                {freightLoading ? "Calculando frete..." : "Calcular Frete 🛵"}
-              </button>
-
-              {freightError && (
-                <p className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {freightError}
-                </p>
-              )}
-
-              {freight && (
-                <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
-                  <p className="text-sm font-bold text-green-800">
-                    Frete: {freight.valorFrete}
+              {deliveryType === "retirada" ? (
+                <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-center">
+                  <p className="font-bold text-green-800">
+                    Retirada no local — Frete grátis
                   </p>
-                  <p className="mt-0.5 text-xs text-green-700">
-                    Distância: {freight.distanciaKm} km · Tempo estimado: ~
-                    {freight.tempoEstimado} min
-                  </p>
-                  <p
-                    className="mt-0.5 text-xs text-green-600 line-clamp-1"
-                    title={freight.displayName}
-                  >
-                    📍 {freight.displayName}
+                  <p className="mt-1 text-xs text-green-700">
+                    Av. Cachoeira Paulista, 17 — CEP 03551-000, São Paulo
                   </p>
                 </div>
+              ) : (
+                <>
+                  <h2 className="font-display text-xl text-gold">
+                    Endereço de Entrega
+                  </h2>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {/* CEP */}
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        CEP *
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="00000-000"
+                        value={cep}
+                        onChange={handleCepChange}
+                        maxLength={9}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Número */}
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Número *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 123"
+                        value={numero}
+                        onChange={(e) => {
+                          setNumero(e.target.value);
+                          setFreight(null);
+                        }}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Rua */}
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Rua
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Preenchido automaticamente pelo CEP"
+                        value={rua}
+                        onChange={(e) => setRua(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Complemento */}
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Complemento
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Apto, bloco, casa..."
+                        value={complemento}
+                        onChange={(e) => setComplemento(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Bairro */}
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Bairro
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Preenchido pelo CEP"
+                        value={bairro}
+                        onChange={(e) => setBairro(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Referência */}
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Ponto de referência
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: próximo ao mercado, portão azul..."
+                        value={referencia}
+                        onChange={(e) => setReferencia(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Obs */}
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Observações do pedido
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Ex: sem cebola, borda recheada..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Calculate freight */}
+                  <button
+                    type="button"
+                    disabled={freightLoading}
+                    onClick={calculateFreight}
+                    className="mt-4 w-full rounded-2xl bg-rosso py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
+                  >
+                    {freightLoading
+                      ? "Calculando frete..."
+                      : "Calcular Frete 🛵"}
+                  </button>
+
+                  {freightError && (
+                    <p className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                      {freightError}
+                    </p>
+                  )}
+
+                  {freight && (
+                    <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+                      <p className="text-sm font-bold text-green-800">
+                        Frete: {freight.valorFrete}
+                      </p>
+                      <p className="mt-0.5 text-xs text-green-700">
+                        Distância: {freight.distanciaKm} km · Tempo estimado: ~
+                        {freight.tempoEstimado} min
+                      </p>
+                      <p
+                        className="mt-0.5 text-xs text-green-600 line-clamp-1"
+                        title={freight.displayName}
+                      >
+                        📍 {freight.displayName}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>
@@ -448,9 +501,15 @@ function CheckoutPage() {
                 <div className="flex justify-between text-smoke">
                   <span>Frete</span>
                   <span
-                    className={freight ? "font-semibold text-green-700" : ""}
+                    className={
+                      effectiveFreight ? "font-semibold text-green-700" : ""
+                    }
                   >
-                    {freight ? freight.valorFrete : "— calcule o frete"}
+                    {deliveryType === "retirada"
+                      ? "R$ 0,00"
+                      : freight
+                        ? freight.valorFrete
+                        : "— calcule o frete"}
                   </span>
                 </div>
                 <div className="flex justify-between pt-1 text-base font-bold text-gold">
