@@ -8,6 +8,8 @@ const STATUS_LABEL = {
   NO_FORNO: "No Forno",
   SAIU_PARA_ENTREGA: "Saiu para Entrega",
   ENTREGUE: "Entregue",
+  CANCELADO: "Cancelado",
+  PAGO: "Pagos (aprovados)",
 };
 
 const formatCurrency = (value) =>
@@ -45,7 +47,10 @@ function SalesAnalyticsPage() {
   const summary = data?.summary;
   const dailySales = data?.dailySales ?? [];
   const topProducts = data?.topProducts ?? [];
-  const statusCounts = data?.statusCounts ?? {};
+  const rawStatusCounts = data?.statusCounts ?? {};
+  const statusCounts = summary
+    ? { ...rawStatusCounts, PAGO: summary.paidOrdersCount }
+    : rawStatusCounts;
   const maxRevenue = Math.max(...dailySales.map((item) => item.revenue), 1);
   const maxOrders = Math.max(...Object.values(statusCounts), 1);
 
