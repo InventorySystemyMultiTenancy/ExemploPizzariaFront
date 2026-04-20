@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../hooks/useAuth.js";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
@@ -324,6 +325,7 @@ function OrderCard({
 
 function KitchenPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [now, setNow] = useState(() => Date.now());
   const [latestAlert, setLatestAlert] = useState(null);
   const [freshOrderIds, setFreshOrderIds] = useState([]);
@@ -489,6 +491,14 @@ function KitchenPage() {
     staleTime: 60_000,
   });
 
+  const visibleOrders = useMemo(
+    () =>
+      user?.role === "MOTOBOY"
+        ? orders.filter((o) => o.assignedMotoboyId === user.id)
+        : orders,
+    [orders, user],
+  );
+
   const {
     mutate: assignMotoboy,
     variables: assignVars,
@@ -548,39 +558,39 @@ function KitchenPage() {
   const currentNow = new Date(now);
   const overdueCount = useMemo(
     () =>
-      orders.filter((order) => getOrderEta(order, currentNow)?.isOverdue)
+      visibleOrders.filter((order) => getOrderEta(order, currentNow)?.isOverdue)
         .length,
-    [currentNow, orders],
+    [currentNow, visibleOrders],
   );
   const overdueIds = useMemo(
     () =>
-      orders
+      visibleOrders
         .filter((order) => getOrderEta(order, currentNow)?.isOverdue)
         .map((order) => order.id),
-    [currentNow, orders],
+    [currentNow, visibleOrders],
   );
   const getColumnOrders = (columnKey) => {
     if (columnKey === "AGUARDANDO_PAGAMENTO") {
-      return orders.filter(
+      return visibleOrders.filter(
         (o) => o.status === "RECEBIDO" && o.paymentStatus === "PENDENTE",
       );
     }
     if (columnKey === "RECEBIDO") {
-      return orders.filter(
+      return visibleOrders.filter(
         (o) => o.status === "RECEBIDO" && o.paymentStatus !== "PENDENTE",
       );
     }
     if (columnKey === "SAIU_PARA_ENTREGA") {
-      return orders.filter(
+      return visibleOrders.filter(
         (o) => o.status === "SAIU_PARA_ENTREGA" && !o.isPickup,
       );
     }
     if (columnKey === "RETIRADA_PRONTA") {
-      return orders.filter(
+      return visibleOrders.filter(
         (o) => o.status === "SAIU_PARA_ENTREGA" && o.isPickup,
       );
     }
-    return orders.filter((o) => o.status === columnKey);
+    return visibleOrders.filter((o) => o.status === columnKey);
   };
 
   const stageCounts = useMemo(
@@ -589,7 +599,7 @@ function KitchenPage() {
         ...col,
         count: getColumnOrders(col.key).length,
       })),
-    [orders], // getColumnOrders is inline and only depends on orders
+    [visibleOrders], // getColumnOrders is inline and only depends on visibleOrders
   );
   const previousStageCountsRef = useRef({});
   const [changedStageKeys, setChangedStageKeys] = useState([]);
