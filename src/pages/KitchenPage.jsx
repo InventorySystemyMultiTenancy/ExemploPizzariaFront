@@ -92,6 +92,8 @@ function OrderCard({
   onConfirmPayment,
   onPayLater,
   confirmingPayment,
+  onCancel,
+  cancelling,
 }) {
   const stage = STAGES.find((s) => s.key === order.status);
   const hasNext = !!stage?.next && !onConfirmPayment;
@@ -205,6 +207,26 @@ function OrderCard({
           className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 py-3 text-sm font-bold text-gray-900 transition hover:opacity-90 disabled:opacity-50"
         >
           {advancing ? "Atualizando..." : NEXT_LABEL[order.status]}
+        </button>
+      )}
+
+      {/* Cancel button — shown in all stages except payment pending column */}
+      {onCancel && !onConfirmPayment && (
+        <button
+          type="button"
+          disabled={cancelling || advancing}
+          onClick={() => {
+            if (
+              window.confirm(
+                `Cancelar pedido #${order.id.slice(-6).toUpperCase()}?`,
+              )
+            ) {
+              onCancel(order.id);
+            }
+          }}
+          className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-400 transition hover:bg-red-500/20 disabled:opacity-40"
+        >
+          {cancelling ? "Cancelando..." : "Cancelar Pedido"}
         </button>
       )}
     </article>
@@ -367,6 +389,22 @@ function KitchenPage() {
       toast.success("Status atualizado");
     },
     onError: () => toast.error("Falha ao atualizar status"),
+  });
+
+  const {
+    mutate: cancelOrder,
+    variables: cancelVars,
+    isPending: isCancelling,
+  } = useMutation({
+    mutationFn: async (orderId) => {
+      const res = await api.patch(`/orders/${orderId}/cancel`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Pedido cancelado");
+    },
+    onError: () => toast.error("Falha ao cancelar pedido"),
   });
 
   const {
@@ -695,6 +733,8 @@ function KitchenPage() {
                         confirmingPayment={
                           isPaymentPending && paymentVars?.orderId === order.id
                         }
+                        onCancel={cancelOrder}
+                        cancelling={isCancelling && cancelVars === order.id}
                       />
                     ))
                   )}

@@ -139,7 +139,13 @@ function ClientDashboardPage() {
                     now={new Date(now)}
                     order={order}
                   />
-                  <span className="rounded-xl bg-gold/10 px-3 py-1 text-xs font-bold text-gold">
+                  <span
+                    className={`rounded-xl px-3 py-1 text-xs font-bold ${
+                      order.status === "CANCELADO"
+                        ? "bg-red-500/10 text-red-400"
+                        : "bg-gold/10 text-gold"
+                    }`}
+                  >
                     {order.status.replace(/_/g, " ")}
                   </span>
                   <span className="text-sm font-bold text-gold">

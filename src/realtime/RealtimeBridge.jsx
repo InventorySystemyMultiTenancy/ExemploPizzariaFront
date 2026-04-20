@@ -124,9 +124,13 @@ export default function RealtimeBridge() {
     const onOrderStatusUpdated = (payload) => {
       if (user.role === "CLIENTE") {
         queryClient.invalidateQueries({ queryKey: ["my-orders"] });
-        toast.success(
-          `Seu pedido agora está em ${payload.status.replace(/_/g, " ")}`,
-        );
+        if (payload.status === "CANCELADO") {
+          toast.error("Seu pedido foi cancelado.");
+        } else {
+          toast.success(
+            `Seu pedido agora está em ${payload.status.replace(/_/g, " ")}`,
+          );
+        }
         return;
       }
 
