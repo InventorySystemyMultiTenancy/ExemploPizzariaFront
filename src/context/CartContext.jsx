@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { AuthContext } from "./AuthContext.jsx";
 
 const CartContext = createContext(null);
 
 const FREIGHT_BASE = 0;
-const CART_STORAGE_KEY = "pizzaria_cart";
 
 const currency = (value) =>
   value.toLocaleString("pt-BR", {
@@ -12,9 +12,13 @@ const currency = (value) =>
     currency: "BRL",
   });
 
-function loadCartFromStorage() {
+function storageKey(userId) {
+  return userId ? `pizzaria_cart_${userId}` : "pizzaria_cart_guest";
+}
+
+function loadCartFromStorage(userId) {
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(userId));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -22,13 +26,21 @@ function loadCartFromStorage() {
 }
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => loadCartFromStorage());
+  const { user } = useContext(AuthContext);
+  const userId = user?.id ?? null;
+
+  const [items, setItems] = useState(() => loadCartFromStorage(userId));
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Quando o usuário mudar (login/logout), carrega o carrinho do novo usuário
+  useEffect(() => {
+    setItems(loadCartFromStorage(userId));
+  }, [userId]);
 
   // Persiste o carrinho no localStorage sempre que ele mudar
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    localStorage.setItem(storageKey(userId), JSON.stringify(items));
+  }, [items, userId]);
 
   const addItem = (item) => {
     setItems((prev) => {
