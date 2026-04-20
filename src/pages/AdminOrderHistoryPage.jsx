@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
@@ -51,6 +51,23 @@ function AdminOrderHistoryPage() {
   const [appliedFilters, setAppliedFilters] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [showOnlyRefund, setShowOnlyRefund] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef(null);
+
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["admin-clients"],
+    queryFn: async () => {
+      const res = await api.get("/admin/clients");
+      return res.data?.data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const suggestions = useMemo(() => {
+    if (!clientName.trim()) return [];
+    const lower = clientName.toLowerCase();
+    return allClients.filter((c) => c.name.toLowerCase().includes(lower));
+  }, [clientName, allClients]);
 
   const queryParams = new URLSearchParams();
   if (appliedFilters.clientName)
@@ -149,14 +166,48 @@ function AdminOrderHistoryPage() {
           Filtros
         </p>
         <div className="flex flex-wrap gap-3">
-          <input
-            type="text"
-            placeholder="Nome do cliente"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleApply()}
-            className="flex-1 min-w-[180px] rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/50 focus:outline-none"
-          />
+          {/* Client name with autocomplete */}
+          <div className="relative flex-1 min-w-[180px]">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Nome do cliente"
+              value={clientName}
+              autoComplete="off"
+              onChange={(e) => {
+                setClientName(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setShowSuggestions(false);
+                  handleApply();
+                }
+                if (e.key === "Escape") setShowSuggestions(false);
+              }}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/50 focus:outline-none"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                {suggestions.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onMouseDown={() => {
+                        setClientName(c.name);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-900 hover:bg-gold/10 hover:text-gold"
+                    >
+                      {c.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <label className="text-xs text-smoke">De</label>
             <input
