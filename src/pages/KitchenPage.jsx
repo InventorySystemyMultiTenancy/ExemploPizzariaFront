@@ -95,6 +95,7 @@ function OrderCard({
   onCancel,
   cancelling,
 }) {
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const stage = STAGES.find((s) => s.key === order.status);
   const hasNext = !!stage?.next && !onConfirmPayment;
   const eta = getOrderEta(order, now);
@@ -211,24 +212,41 @@ function OrderCard({
       )}
 
       {/* Cancel button — shown in all columns including payment pending */}
-      {onCancel && (
-        <button
-          type="button"
-          disabled={cancelling || advancing || confirmingPayment}
-          onClick={() => {
-            if (
-              window.confirm(
-                `Cancelar pedido #${order.id.slice(-6).toUpperCase()}?`,
-              )
-            ) {
-              onCancel(order.id);
-            }
-          }}
-          className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
-        >
-          {cancelling ? "Cancelando..." : "Cancelar Pedido"}
-        </button>
-      )}
+      {onCancel &&
+        (confirmCancel ? (
+          <div className="mt-2 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2">
+            <span className="flex-1 text-xs text-red-600">
+              Cancelar pedido #{order.id.slice(-6).toUpperCase()}?
+            </span>
+            <button
+              type="button"
+              disabled={cancelling}
+              onClick={() => {
+                setConfirmCancel(false);
+                onCancel(order.id);
+              }}
+              className="rounded-xl bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+            >
+              {cancelling ? "..." : "Sim"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(false)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-1 text-xs font-semibold hover:bg-gray-100"
+            >
+              Não
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={cancelling || advancing || confirmingPayment}
+            onClick={() => setConfirmCancel(true)}
+            className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
+          >
+            {cancelling ? "Cancelando..." : "Cancelar Pedido"}
+          </button>
+        ))}
     </article>
   );
 }
