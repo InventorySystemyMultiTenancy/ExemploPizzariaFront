@@ -210,11 +210,11 @@ function OrderCard({
         </button>
       )}
 
-      {/* Cancel button — shown in all stages except payment pending column */}
-      {onCancel && !onConfirmPayment && (
+      {/* Cancel button — shown in all columns including payment pending */}
+      {onCancel && (
         <button
           type="button"
-          disabled={cancelling || advancing}
+          disabled={cancelling || advancing || confirmingPayment}
           onClick={() => {
             if (
               window.confirm(
@@ -224,7 +224,7 @@ function OrderCard({
               onCancel(order.id);
             }
           }}
-          className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-400 transition hover:bg-red-500/20 disabled:opacity-40"
+          className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
         >
           {cancelling ? "Cancelando..." : "Cancelar Pedido"}
         </button>

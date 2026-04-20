@@ -125,7 +125,10 @@ export default function RealtimeBridge() {
       if (user.role === "CLIENTE") {
         queryClient.invalidateQueries({ queryKey: ["my-orders"] });
         if (payload.status === "CANCELADO") {
-          toast.error("Seu pedido foi cancelado.");
+          const msg = payload.paymentWasPending
+            ? "Seu pedido foi cancelado: pagamento não recebido."
+            : "Seu pedido foi cancelado.";
+          toast.error(msg);
         } else {
           toast.success(
             `Seu pedido agora está em ${payload.status.replace(/_/g, " ")}`,
