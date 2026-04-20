@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import CartDrawer from "../components/CartDrawer.jsx";
+import Navbar from "../components/Navbar.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
@@ -239,26 +240,7 @@ function CardapioPage() {
   return (
     <main className="min-h-screen bg-white text-gray-900">
       {/* Sticky Nav */}
-      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
-          <Link to="/">
-            <img
-              src="/logo-fellice.png"
-              alt="Pizzaria Fellice"
-              className="h-10 w-auto"
-            />
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/cardapio"
-              className="text-sm font-semibold text-rosso underline underline-offset-4"
-            >
-              Cardápio
-            </Link>
-            <NavAuthLinks />
-          </div>
-        </div>
-      </header>
+      <Navbar activeLink="cardapio" />
 
       {/* Page header */}
       <div className="border-b border-gray-100 bg-gray-50/60 py-7 text-center">
@@ -330,60 +312,6 @@ function CardapioPage() {
 
       <CartDrawer />
     </main>
-  );
-}
-
-function NavAuthLinks() {
-  const { openCart, items } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();
-  return (
-    <>
-      {isAuthenticated ? (
-        <>
-          <Link
-            className="text-sm text-gray-500 transition-colors hover:text-rosso"
-            to={
-              user?.role === "ADMIN" || user?.role === "FUNCIONARIO"
-                ? "/admin"
-                : user?.role === "MOTOBOY"
-                  ? "/motoboy"
-                  : user?.role === "COZINHA"
-                    ? "/cozinha"
-                    : "/dashboard"
-            }
-          >
-            Painel
-          </Link>
-          <button
-            type="button"
-            onClick={logout}
-            className="text-sm text-gray-400 transition-colors hover:text-rosso"
-          >
-            Sair
-          </button>
-        </>
-      ) : (
-        <Link
-          className="text-sm text-gray-600 transition-colors hover:text-rosso"
-          to="/login"
-        >
-          Entrar
-        </Link>
-      )}
-      <button
-        type="button"
-        onClick={openCart}
-        className="relative flex items-center gap-2 rounded-xl bg-rosso px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-ember"
-      >
-        <span>🛒</span>
-        <span className="hidden sm:inline">Carrinho</span>
-        {items.length > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-black text-black">
-            {items.length}
-          </span>
-        )}
-      </button>
-    </>
   );
 }
 
