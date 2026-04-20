@@ -51,6 +51,12 @@ const COLUMNS = [
     next: "ENTREGUE",
     color: "border-green-500/40 bg-green-500/10",
   },
+  {
+    key: "RETIRADA_PRONTA",
+    label: "Retirada no Local",
+    virtual: true,
+    color: "border-purple-500/40 bg-purple-500/10",
+  },
 ];
 
 // Real order statuses (for drag/advance logic)
@@ -94,12 +100,23 @@ function OrderCard({
   confirmingPayment,
   onCancel,
   cancelling,
+  motoboys = [],
+  onAssignMotoboy,
+  assigningMotoboy,
 }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const stage = STAGES.find((s) => s.key === order.status);
   const hasNext = !!stage?.next && !onConfirmPayment;
   const eta = getOrderEta(order, now);
   const isPaymentPending = order.paymentStatus === "PENDENTE";
+
+  const advanceLabel = advancing
+    ? "Atualizando..."
+    : order.isPickup && order.status === "NO_FORNO"
+      ? "Pronto p/ Retirada"
+      : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
+        ? "Marcar Retirado"
+        : NEXT_LABEL[order.status];
 
   return (
     <article
@@ -131,6 +148,15 @@ function OrderCard({
             }`}
           >
             {order.status.replace(/_/g, " ")}
+          </span>
+          <span
+            className={`rounded-xl px-2 py-0.5 text-[10px] font-bold ${
+              order.isPickup
+                ? "bg-purple-100 text-purple-700"
+                : "bg-sky-100 text-sky-700"
+            }`}
+          >
+            {order.isPickup ? "🏠 Retirada" : "🛵 Entrega"}
           </span>
           {isPaymentPending && !onConfirmPayment && (
             <span className="rounded-xl bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
@@ -207,8 +233,53 @@ function OrderCard({
           onClick={() => onAdvance(order.id, stage.next)}
           className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ember to-red-500 py-3 text-sm font-bold text-gray-900 transition hover:opacity-90 disabled:opacity-50"
         >
-          {advancing ? "Atualizando..." : NEXT_LABEL[order.status]}
+          {advanceLabel}
         </button>
+      )}
+
+      {/* Motoboy assignment — delivery orders only */}
+      {!order.isPickup && onAssignMotoboy && motoboys.length > 0 && (
+        <div className="mt-3 border-t border-gray-200 pt-3">
+          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
+            🛵 Motoboy
+          </p>
+          {order.assignedMotoboyId ? (
+            <div className="flex items-center gap-2">
+              <span className="flex-1 truncate rounded-xl bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                {motoboys.find((m) => m.id === order.assignedMotoboyId)?.name ??
+                  "Motoboy"}
+              </span>
+              <select
+                value={order.assignedMotoboyId}
+                onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
+                disabled={assigningMotoboy}
+                className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-xs"
+              >
+                {motoboys.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <select
+              value=""
+              onChange={(e) =>
+                e.target.value && onAssignMotoboy(order.id, e.target.value)
+              }
+              disabled={assigningMotoboy}
+              className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
+            >
+              <option value="">Selecionar motoboy...</option>
+              {motoboys.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       )}
 
       {/* Cancel button — shown in all columns including payment pending */}
@@ -409,6 +480,30 @@ function KitchenPage() {
     onError: () => toast.error("Falha ao atualizar status"),
   });
 
+  const { data: motoboys = [] } = useQuery({
+    queryKey: ["motoboys"],
+    queryFn: async () => {
+      const res = await api.get("/admin/motoboys");
+      return res.data?.data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const {
+    mutate: assignMotoboy,
+    variables: assignVars,
+    isPending: isAssigning,
+  } = useMutation({
+    mutationFn: async ({ orderId, motoboyId }) => {
+      await api.patch(`/orders/${orderId}/assign-motoboy`, { motoboyId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      toast.success("Motoboy atribuído");
+    },
+    onError: () => toast.error("Falha ao atribuir motoboy"),
+  });
+
   const {
     mutate: cancelOrder,
     variables: cancelVars,
@@ -473,6 +568,16 @@ function KitchenPage() {
     if (columnKey === "RECEBIDO") {
       return orders.filter(
         (o) => o.status === "RECEBIDO" && o.paymentStatus !== "PENDENTE",
+      );
+    }
+    if (columnKey === "SAIU_PARA_ENTREGA") {
+      return orders.filter(
+        (o) => o.status === "SAIU_PARA_ENTREGA" && !o.isPickup,
+      );
+    }
+    if (columnKey === "RETIRADA_PRONTA") {
+      return orders.filter(
+        (o) => o.status === "SAIU_PARA_ENTREGA" && o.isPickup,
       );
     }
     return orders.filter((o) => o.status === columnKey);
@@ -597,7 +702,7 @@ function KitchenPage() {
         </div>
       </header>
 
-      <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mb-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {stageCounts.map((stage) => {
           const changed = changedStageKeys.includes(stage.key);
 
@@ -658,7 +763,7 @@ function KitchenPage() {
 
       {/* Kanban columns */}
       {!isLoading && !isError && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           {COLUMNS.map((col) => {
             const isVirtual = col.virtual;
             const stageOrders = getColumnOrders(col.key).sort((a, b) =>
@@ -730,7 +835,7 @@ function KitchenPage() {
                           advance({ orderId, status })
                         }
                         onConfirmPayment={
-                          isVirtual
+                          isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
                             ? (orderId) =>
                                 setPaymentStatus({
                                   orderId,
@@ -739,7 +844,7 @@ function KitchenPage() {
                             : undefined
                         }
                         onPayLater={
-                          isVirtual
+                          isVirtual && col.key === "AGUARDANDO_PAGAMENTO"
                             ? (orderId) =>
                                 setPaymentStatus({
                                   orderId,
@@ -753,6 +858,16 @@ function KitchenPage() {
                         }
                         onCancel={cancelOrder}
                         cancelling={isCancelling && cancelVars === order.id}
+                        motoboys={motoboys}
+                        onAssignMotoboy={
+                          !order.isPickup
+                            ? (orderId, motoboyId) =>
+                                assignMotoboy({ orderId, motoboyId })
+                            : undefined
+                        }
+                        assigningMotoboy={
+                          isAssigning && assignVars?.orderId === order.id
+                        }
                       />
                     ))
                   )}

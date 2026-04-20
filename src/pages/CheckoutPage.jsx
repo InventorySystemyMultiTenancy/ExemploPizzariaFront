@@ -166,6 +166,7 @@ function CheckoutPage() {
     mutationFn: async (paymentMethod) => {
       const response = await api.post("/orders", {
         deliveryAddress: fullAddress || "Endereço não informado",
+        isPickup: deliveryType === "retirada",
         notes: [notes, referencia ? `Ref: ${referencia}` : ""]
           .filter(Boolean)
           .join(" | "),
