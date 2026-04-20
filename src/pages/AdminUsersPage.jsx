@@ -39,9 +39,24 @@ function AdminUsersPage() {
       toast.success("Usuário criado com sucesso!");
     },
     onError: (err) => {
+      const errData = err?.response?.data?.error;
+      const fieldErrors = errData?.details?.fieldErrors;
+      if (fieldErrors) {
+        const first = Object.entries(fieldErrors)[0];
+        if (first) {
+          const fieldNames = {
+            name: "Nome",
+            email: "E-mail",
+            phone: "Telefone",
+            password: "Senha",
+            role: "Perfil",
+          };
+          toast.error(`${fieldNames[first[0]] ?? first[0]}: ${first[1][0]}`);
+          return;
+        }
+      }
       const msg =
-        err?.response?.data?.message ||
-        "Erro ao criar usuário. Verifique os dados.";
+        errData?.message || "Erro ao criar usuário. Verifique os dados.";
       toast.error(msg);
     },
   });
@@ -54,7 +69,20 @@ function AdminUsersPage() {
       role: form.role,
     };
     if (form.email.trim()) payload.email = form.email.trim();
-    if (form.phone.trim()) payload.phone = form.phone.trim();
+    if (form.phone.trim()) {
+      const digitsOnly = form.phone.replace(/\D/g, "");
+      if (digitsOnly.length < 10) {
+        toast.error("Telefone deve ter pelo menos 10 dígitos.");
+        return;
+      }
+      payload.phone = form.phone.trim();
+    }
+    if (!payload.email && !payload.phone) {
+      toast.error(
+        "Informe e-mail ou telefone para que o usuário possa fazer login.",
+      );
+      return;
+    }
     createMutation.mutate(payload);
   };
 
