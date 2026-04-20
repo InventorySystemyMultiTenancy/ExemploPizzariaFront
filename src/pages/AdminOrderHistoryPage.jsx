@@ -307,60 +307,77 @@ function AdminOrderHistoryPage() {
               className={`rounded-2xl border transition-all duration-200 ${
                 needsRefundFlag
                   ? "border-red-300 bg-red-50"
-                  : "border-gray-200 bg-white"
+                  : order.paymentStatus === "PENDENTE" &&
+                      order.status !== "CANCELADO"
+                    ? "border-amber-300 bg-amber-50/40"
+                    : "border-gray-200 bg-white"
               }`}
             >
               {/* Row header */}
-              <button
-                type="button"
-                onClick={() => setExpandedId(isExpanded ? null : order.id)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="shrink-0 text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    #{order.id.slice(-6).toUpperCase()}
-                  </span>
-                  <span className="truncate text-sm font-semibold text-gray-900">
-                    {order.user?.name ?? "—"}
-                  </span>
-                  {needsRefundFlag && (
-                    <span className="shrink-0 rounded-full bg-red-200 px-2 py-0.5 text-[10px] font-bold text-red-800">
-                      ESTORNO PENDENTE
+              <div className="flex w-full items-center gap-3 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                  className="flex flex-1 items-center justify-between gap-3 text-left min-w-0"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="shrink-0 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      #{order.id.slice(-6).toUpperCase()}
                     </span>
+                    <span className="truncate text-sm font-semibold text-gray-900">
+                      {order.user?.name ?? "—"}
+                    </span>
+                    {needsRefundFlag && (
+                      <span className="shrink-0 rounded-full bg-red-200 px-2 py-0.5 text-[10px] font-bold text-red-800">
+                        ESTORNO PENDENTE
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="hidden text-xs text-smoke sm:block">
+                      {formatDate(order.createdAt)}
+                    </span>
+                    <span
+                      className={`rounded-xl px-2 py-1 text-xs font-bold ${STATUS_CLASS[order.status] ?? "bg-gray-100 text-gray-700"}`}
+                    >
+                      {STATUS_LABEL[order.status] ?? order.status}
+                    </span>
+                    <span
+                      className={`rounded-xl px-2 py-1 text-xs font-bold ${PAYMENT_CLASS[order.paymentStatus] ?? "bg-gray-100 text-gray-700"}`}
+                    >
+                      {PAYMENT_LABEL[order.paymentStatus] ??
+                        order.paymentStatus}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">
+                      R$ {Number(order.total).toFixed(2)}
+                    </span>
+                    <svg
+                      className={`h-4 w-4 text-smoke transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </button>
+                {order.paymentStatus === "PENDENTE" &&
+                  order.status !== "CANCELADO" && (
+                    <button
+                      type="button"
+                      disabled={isPaying && payingId === order.id}
+                      onClick={() => markAsPaid(order.id)}
+                      className="shrink-0 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {isPaying && payingId === order.id ? "..." : "✓ Pago"}
+                    </button>
                   )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="hidden text-xs text-smoke sm:block">
-                    {formatDate(order.createdAt)}
-                  </span>
-                  <span
-                    className={`rounded-xl px-2 py-1 text-xs font-bold ${STATUS_CLASS[order.status] ?? "bg-gray-100 text-gray-700"}`}
-                  >
-                    {STATUS_LABEL[order.status] ?? order.status}
-                  </span>
-                  <span
-                    className={`rounded-xl px-2 py-1 text-xs font-bold ${PAYMENT_CLASS[order.paymentStatus] ?? "bg-gray-100 text-gray-700"}`}
-                  >
-                    {PAYMENT_LABEL[order.paymentStatus] ?? order.paymentStatus}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    R$ {Number(order.total).toFixed(2)}
-                  </span>
-                  <svg
-                    className={`h-4 w-4 text-smoke transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </button>
+              </div>
 
               {/* Expanded details */}
               {isExpanded && (
@@ -415,22 +432,6 @@ function AdminOrderHistoryPage() {
                   <p className="mt-3 text-right text-sm font-bold text-gray-900">
                     Total: R$ {Number(order.total).toFixed(2)}
                   </p>
-
-                  {order.paymentStatus === "PENDENTE" &&
-                    order.status !== "CANCELADO" && (
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          disabled={isPaying && payingId === order.id}
-                          onClick={() => markAsPaid(order.id)}
-                          className="rounded-xl bg-green-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {isPaying && payingId === order.id
-                            ? "Salvando..."
-                            : "✓ Marcar como Pago"}
-                        </button>
-                      </div>
-                    )}
                 </div>
               )}
             </div>
