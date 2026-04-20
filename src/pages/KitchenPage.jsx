@@ -57,10 +57,10 @@ const COLUMNS = [
 const STAGES = COLUMNS.filter((c) => !c.virtual);
 
 const STAGE_BADGE = {
-  RECEBIDO: "bg-blue-500/20 text-blue-300",
-  PREPARANDO: "bg-yellow-500/20 text-yellow-300",
-  NO_FORNO: "bg-ember/20 text-orange-300",
-  SAIU_PARA_ENTREGA: "bg-green-500/20 text-green-300",
+  RECEBIDO: "bg-blue-100 text-blue-700",
+  PREPARANDO: "bg-yellow-100 text-yellow-700",
+  NO_FORNO: "bg-orange-100 text-orange-700",
+  SAIU_PARA_ENTREGA: "bg-green-100 text-green-700",
 };
 
 const NEXT_LABEL = {
@@ -115,13 +115,13 @@ function OrderCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-smoke">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
             #{order.id.slice(-6).toUpperCase()}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-gray-900">
             {order.user?.name ?? "Cliente"}
           </p>
-          <p className="text-xs text-smoke">{formatTime(order.createdAt)}</p>
+          <p className="text-xs text-gray-600">{formatTime(order.createdAt)}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span
@@ -132,7 +132,7 @@ function OrderCard({
             {order.status.replace(/_/g, " ")}
           </span>
           {isPaymentPending && !onConfirmPayment && (
-            <span className="rounded-xl bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+            <span className="rounded-xl bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
               💰 Pag. pendente
             </span>
           )}
@@ -163,7 +163,7 @@ function OrderCard({
                 {item.product?.name ?? "Pizza"}
               </span>
             )}
-            <span className="ml-2 text-xs text-smoke">
+            <span className="ml-2 text-xs text-gray-600">
               {item.size} &times; {item.quantity}
             </span>
           </li>
@@ -171,7 +171,7 @@ function OrderCard({
       </ul>
 
       {order.notes && (
-        <p className="mt-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs text-smoke">
+        <p className="mt-2 rounded-xl bg-gray-200 px-3 py-1.5 text-xs text-gray-700">
           Obs: {order.notes}
         </p>
       )}
