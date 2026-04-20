@@ -1,6 +1,36 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
+
+const MONTH_SHORT = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
+const MONTH_LABEL = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
 
 const STATUS_LABEL = {
   RECEBIDO: "Recebido",
@@ -24,6 +54,13 @@ const formatShortDate = (date) =>
     month: "2-digit",
   });
 
+const formatChartLabel = (date) => {
+  if (date.length === 7) {
+    return MONTH_SHORT[parseInt(date.slice(5, 7), 10) - 1];
+  }
+  return formatShortDate(date);
+};
+
 function MetricCard({ label, value, hint }) {
   return (
     <article className="rounded-3xl border border-gold/20 bg-lacquer/70 p-5 shadow-glow">
@@ -35,10 +72,33 @@ function MetricCard({ label, value, hint }) {
 }
 
 function SalesAnalyticsPage() {
+  const now = new Date();
+  const [filterYear, setFilterYear] = useState(now.getFullYear());
+  const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1); // 1-12 or 0 = whole year
+
+  const { from, to } = useMemo(() => {
+    if (filterMonth === 0) {
+      return { from: `${filterYear}-01-01`, to: `${filterYear}-12-31` };
+    }
+    const lastDay = new Date(filterYear, filterMonth, 0).getDate();
+    const mm = String(filterMonth).padStart(2, "0");
+    return {
+      from: `${filterYear}-${mm}-01`,
+      to: `${filterYear}-${mm}-${lastDay}`,
+    };
+  }, [filterYear, filterMonth]);
+
+  const yearOptions = useMemo(() => {
+    const base = now.getFullYear();
+    return [base - 2, base - 1, base];
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-sales-analytics"],
+    queryKey: ["admin-sales-analytics", from, to],
     queryFn: async () => {
-      const response = await api.get("/admin/analytics");
+      const response = await api.get("/admin/analytics", {
+        params: { from, to },
+      });
       return response.data?.data;
     },
     refetchInterval: 120_000,
@@ -63,7 +123,32 @@ function SalesAnalyticsPage() {
             Receita, volume de pedidos e sabores mais vendidos em tempo real.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Year selector */}
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(Number(e.target.value))}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm transition hover:border-gold/40 focus:outline-none"
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          {/* Month selector */}
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(Number(e.target.value))}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm transition hover:border-gold/40 focus:outline-none"
+          >
+            <option value={0}>Ano todo</option>
+            {MONTH_LABEL.map((m, i) => (
+              <option key={i + 1} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
           <Link
             to="/admin"
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/40"
@@ -156,7 +241,9 @@ function SalesAnalyticsPage() {
             <article className="rounded-3xl border border-gold/20 bg-lacquer/70 p-5 shadow-glow">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-xl text-gold">
-                  Últimos 7 dias
+                  {filterMonth === 0
+                    ? `Por mês — ${filterYear}`
+                    : `${MONTH_LABEL[filterMonth - 1]} ${filterYear}`}
                 </h2>
                 <div className="flex items-center gap-3 text-xs text-smoke">
                   <span className="flex items-center gap-1">
@@ -207,7 +294,7 @@ function SalesAnalyticsPage() {
                         </div>
                       </div>
                       <div className="text-xs text-smoke">
-                        {formatShortDate(item.date)}
+                        {formatChartLabel(item.date)}
                       </div>
                     </div>
                   );
