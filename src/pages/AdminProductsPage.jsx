@@ -15,7 +15,7 @@ const emptyForm = () => ({
   description: "",
   imageUrl: "",
   category: "",
-  sizes: SIZES.map((size) => ({ size, price: "" })),
+  sizes: SIZES.map((size) => ({ size, price: "", costPrice: "" })),
 });
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
@@ -31,7 +31,12 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       category: product.category ?? "",
       sizes: SIZES.map((size) => {
         const existing = product.sizes?.find((s) => s.size === size);
-        return { size, price: existing ? String(existing.price) : "" };
+        return {
+          size,
+          price: existing ? String(existing.price) : "",
+          costPrice:
+            existing?.costPrice != null ? String(existing.costPrice) : "",
+        };
       }),
     };
   });
@@ -57,11 +62,11 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
     },
   });
 
-  const setPrice = (size, value) => {
+  const setPrice = (size, field, value) => {
     setForm((prev) => ({
       ...prev,
       sizes: prev.sizes.map((s) =>
-        s.size === size ? { ...s, price: value } : s,
+        s.size === size ? { ...s, [field]: value } : s,
       ),
     }));
   };
@@ -72,9 +77,14 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
     const filledSizes = form.sizes.filter((s) => s.price !== "");
     if (!filledSizes.length)
       errs.sizes = "Informe o preço de ao menos um tamanho";
-    filledSizes.forEach(({ size, price }) => {
+    filledSizes.forEach(({ size, price, costPrice }) => {
       if (isNaN(Number(price)) || Number(price) <= 0)
         errs[`price_${size}`] = "Preço inválido";
+      if (
+        costPrice !== "" &&
+        (isNaN(Number(costPrice)) || Number(costPrice) < 0)
+      )
+        errs[`cost_${size}`] = "Custo inválido";
     });
     if (form.imageUrl && !/^https?:\/\/.+/.test(form.imageUrl))
       errs.imageUrl = "URL inválida (deve começar com http)";
@@ -92,7 +102,11 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       category: form.category.trim() || undefined,
       sizes: form.sizes
         .filter((s) => s.price !== "")
-        .map((s) => ({ size: s.size, price: Number(s.price) })),
+        .map((s) => ({
+          size: s.size,
+          price: Number(s.price),
+          ...(s.costPrice !== "" ? { costPrice: Number(s.costPrice) } : {}),
+        })),
     };
     mutation.mutate(payload);
   };
@@ -190,29 +204,62 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
             <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
               Preços por Tamanho *
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {form.sizes.map(({ size, price }) => (
+            <div className="space-y-3">
+              {form.sizes.map(({ size, price, costPrice }) => (
                 <div key={size}>
-                  <label className="mb-1 block text-xs text-smoke">
+                  <p className="mb-1 text-xs font-semibold text-smoke">
                     {SIZE_LABEL[size]}
-                  </label>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-smoke">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={price}
-                      onChange={(e) => setPrice(size, e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
-                      placeholder="0,00"
-                    />
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-0.5 block text-xs text-smoke">
+                        Preço de venda
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-smoke">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={price}
+                          onChange={(e) =>
+                            setPrice(size, "price", e.target.value)
+                          }
+                          className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      {errors[`price_${size}`] && (
+                        <p className="mt-0.5 text-xs text-red-400">
+                          {errors[`price_${size}`]}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="mb-0.5 block text-xs text-smoke">
+                        Custo (opcional)
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-smoke">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={costPrice}
+                          onChange={(e) =>
+                            setPrice(size, "costPrice", e.target.value)
+                          }
+                          className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      {errors[`cost_${size}`] && (
+                        <p className="mt-0.5 text-xs text-red-400">
+                          {errors[`cost_${size}`]}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  {errors[`price_${size}`] && (
-                    <p className="mt-0.5 text-xs text-red-400">
-                      {errors[`price_${size}`]}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>

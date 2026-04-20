@@ -93,26 +93,57 @@ function SalesAnalyticsPage() {
 
       {summary ? (
         <>
-          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Receita / Custo / Lucro — linha 1 */}
+          <section className="mt-6 grid gap-4 sm:grid-cols-3">
             <MetricCard
               label="Receita Total"
               value={formatCurrency(summary.totalRevenue)}
-              hint="Considera pedidos com pagamento aprovado"
+              hint="Pedidos com pagamento aprovado"
             />
             <MetricCard
-              label="Hoje"
-              value={formatCurrency(summary.revenueToday)}
-              hint="Receita confirmada no dia atual"
+              label="Custo Total"
+              value={formatCurrency(summary.totalCost ?? 0)}
+              hint="Soma do preço de custo dos itens"
             />
             <MetricCard
-              label="Mês"
-              value={formatCurrency(summary.revenueThisMonth)}
-              hint="Receita confirmada no mês atual"
+              label="Lucro Líquido"
+              value={formatCurrency(summary.totalProfit ?? 0)}
+              hint="Receita − Custo"
             />
+          </section>
+
+          {/* Hoje / Mês / Ticket médio — linha 2 */}
+          <section className="mt-4 grid gap-4 sm:grid-cols-3">
+            <article className="rounded-3xl border border-gold/20 bg-lacquer/70 p-5 shadow-glow">
+              <p className="text-xs uppercase tracking-[0.24em] text-smoke">
+                Hoje
+              </p>
+              <p className="mt-2 font-display text-2xl text-gold">
+                {formatCurrency(summary.revenueToday)}
+              </p>
+              <div className="mt-1 flex justify-between text-xs text-smoke">
+                <span>Custo: {formatCurrency(summary.costToday ?? 0)}</span>
+                <span>Lucro: {formatCurrency(summary.profitToday ?? 0)}</span>
+              </div>
+            </article>
+            <article className="rounded-3xl border border-gold/20 bg-lacquer/70 p-5 shadow-glow">
+              <p className="text-xs uppercase tracking-[0.24em] text-smoke">
+                Mês
+              </p>
+              <p className="mt-2 font-display text-2xl text-gold">
+                {formatCurrency(summary.revenueThisMonth)}
+              </p>
+              <div className="mt-1 flex justify-between text-xs text-smoke">
+                <span>Custo: {formatCurrency(summary.costThisMonth ?? 0)}</span>
+                <span>
+                  Lucro: {formatCurrency(summary.profitThisMonth ?? 0)}
+                </span>
+              </div>
+            </article>
             <MetricCard
               label="Ticket Médio"
               value={formatCurrency(summary.averageTicket)}
-              hint={`${summary.paidOrdersCount} pedidos pagos de ${summary.ordersCount} totais`}
+              hint={`${summary.paidOrdersCount} pagos de ${summary.ordersCount} totais`}
             />
           </section>
 
@@ -122,26 +153,53 @@ function SalesAnalyticsPage() {
                 <h2 className="font-display text-xl text-gold">
                   Últimos 7 dias
                 </h2>
-                <span className="text-xs text-smoke">
-                  Receita aprovada por dia
-                </span>
+                <div className="flex items-center gap-3 text-xs text-smoke">
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                    Receita
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
+                    Custo
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
+                    Lucro
+                  </span>
+                </div>
               </div>
-              <div className="mt-6 flex h-64 items-end gap-3">
+              <div className="mt-6 flex h-64 items-end gap-2">
                 {dailySales.map((item) => {
-                  const height = `${Math.max((item.revenue / maxRevenue) * 100, 8)}%`;
+                  const revenueH = `${Math.max((item.revenue / maxRevenue) * 100, 4)}%`;
+                  const costH = `${Math.max(((item.cost ?? 0) / maxRevenue) * 100, 0)}%`;
+                  const profitH = `${Math.max(((item.profit ?? 0) / maxRevenue) * 100, 0)}%`;
                   return (
                     <div
                       key={item.date}
-                      className="flex flex-1 flex-col items-center justify-end gap-2"
+                      className="flex flex-1 flex-col items-center justify-end gap-1"
                     >
                       <div className="text-xs text-gold">
                         {formatCurrency(item.revenue)}
                       </div>
-                      <div className="flex h-full w-full items-end rounded-2xl bg-black/25 p-1">
-                        <div
-                          className="w-full rounded-xl bg-gradient-to-t from-ember to-gold transition-all duration-500"
-                          style={{ height }}
-                        />
+                      <div className="flex h-full w-full items-end justify-center gap-0.5 rounded-2xl bg-black/25 p-1">
+                        <div className="flex h-full flex-1 items-end">
+                          <div
+                            className="w-full rounded-t bg-amber-400/80 transition-all"
+                            style={{ height: revenueH }}
+                          />
+                        </div>
+                        <div className="flex h-full flex-1 items-end">
+                          <div
+                            className="w-full rounded-t bg-red-400/70 transition-all"
+                            style={{ height: costH }}
+                          />
+                        </div>
+                        <div className="flex h-full flex-1 items-end">
+                          <div
+                            className="w-full rounded-t bg-green-400/80 transition-all"
+                            style={{ height: profitH }}
+                          />
+                        </div>
                       </div>
                       <div className="text-xs text-smoke">
                         {formatShortDate(item.date)}
