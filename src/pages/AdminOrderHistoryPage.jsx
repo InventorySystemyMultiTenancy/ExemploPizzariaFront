@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
+import toast from "react-hot-toast";
 
 const STATUS_LABEL = {
   RECEBIDO: "Recebido",
@@ -45,6 +46,7 @@ const formatDate = (iso) =>
   });
 
 function AdminOrderHistoryPage() {
+  const queryClient = useQueryClient();
   const [clientName, setClientName] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -111,6 +113,23 @@ function AdminOrderHistoryPage() {
     setAppliedFilters({});
     setShowOnlyRefund(false);
   };
+
+  const {
+    mutate: markAsPaid,
+    variables: payingId,
+    isPending: isPaying,
+  } = useMutation({
+    mutationFn: async (orderId) => {
+      await api.patch(`/orders/${orderId}/payment-status`, {
+        paymentStatus: "APROVADO",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-order-history"] });
+      toast.success("Pagamento marcado como aprovado");
+    },
+    onError: () => toast.error("Falha ao atualizar pagamento"),
+  });
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
@@ -396,6 +415,22 @@ function AdminOrderHistoryPage() {
                   <p className="mt-3 text-right text-sm font-bold text-gray-900">
                     Total: R$ {Number(order.total).toFixed(2)}
                   </p>
+
+                  {order.paymentStatus === "PENDENTE" &&
+                    order.status !== "CANCELADO" && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          disabled={isPaying && payingId === order.id}
+                          onClick={() => markAsPaid(order.id)}
+                          className="rounded-xl bg-green-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {isPaying && payingId === order.id
+                            ? "Salvando..."
+                            : "✓ Marcar como Pago"}
+                        </button>
+                      </div>
+                    )}
                 </div>
               )}
             </div>
