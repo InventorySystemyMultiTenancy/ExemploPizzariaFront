@@ -145,7 +145,7 @@ function OrderCard({
             #{order.id.slice(-6).toUpperCase()}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-gray-900">
-            {order.user?.name ?? "Cliente"}
+            {order.mesa ? order.mesa.name : (order.user?.name ?? "Cliente")}
           </p>
           <p className="text-xs text-gray-600">{formatTime(order.createdAt)}</p>
         </div>
@@ -159,12 +159,18 @@ function OrderCard({
           </span>
           <span
             className={`rounded-xl px-2 py-0.5 text-[10px] font-bold ${
-              order.isPickup
-                ? "bg-purple-100 text-purple-700"
-                : "bg-sky-100 text-sky-700"
+              order.mesa
+                ? "bg-amber-100 text-amber-700"
+                : order.isPickup
+                  ? "bg-purple-100 text-purple-700"
+                  : "bg-sky-100 text-sky-700"
             }`}
           >
-            {order.isPickup ? "🏠 Retirada" : "🛵 Entrega"}
+            {order.mesa
+              ? `🪑 Mesa ${order.mesa.number}`
+              : order.isPickup
+                ? "🏠 Retirada"
+                : "🛵 Entrega"}
           </span>
           {isPaymentPending && !onConfirmPayment && (
             <span className="rounded-xl bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">

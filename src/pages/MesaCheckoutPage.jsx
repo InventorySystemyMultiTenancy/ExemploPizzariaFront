@@ -196,6 +196,7 @@ function MesaCheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const [notes, setNotes] = useState("");
   const [createdOrderId, setCreatedOrderId] = useState(null);
+  const [createdOrderTotal, setCreatedOrderTotal] = useState(0);
   const [payScreen, setPayScreen] = useState(null); // null | "pix" | "terminal"
 
   const orderMutation = useMutation({
@@ -208,6 +209,7 @@ function MesaCheckoutPage() {
     },
     onSuccess: (order) => {
       setCreatedOrderId(order.id);
+      setCreatedOrderTotal(Number(order.total));
       clearCart();
       toast.success("Pedido enviado para a cozinha!");
     },
@@ -410,14 +412,14 @@ function MesaCheckoutPage() {
       {payScreen === "pix" && createdOrderId && (
         <PixScreen
           orderId={createdOrderId}
-          total={subtotal}
+          total={createdOrderTotal}
           onClose={() => setPayScreen(null)}
         />
       )}
       {payScreen === "terminal" && createdOrderId && (
         <TerminalScreen
           orderId={createdOrderId}
-          total={subtotal}
+          total={createdOrderTotal}
           onClose={() => setPayScreen(null)}
         />
       )}
