@@ -211,6 +211,7 @@ function MenuCard({ product }) {
 
 function CardapioPage() {
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [orderMode, setOrderMode] = useState("INTEIRA");
 
   const {
     data: products = [],
@@ -278,9 +279,33 @@ function CardapioPage() {
         </div>
       </div>
 
+      <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-8">
+        <div className="grid grid-cols-2 gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-2">
+          {[
+            { id: "INTEIRA", label: "Pizza Inteira" },
+            { id: "MEIO_A_MEIO", label: "Meio a Meio" },
+          ].map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setOrderMode(option.id)}
+              className={`rounded-2xl py-3 text-sm font-semibold transition-all ${
+                orderMode === option.id
+                  ? "bg-rosso text-white shadow"
+                  : "text-gray-600 hover:bg-white hover:text-gray-900"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Product grid */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        {!isLoading && !isError && <PizzaSelector />}
+        {!isLoading && !isError && orderMode === "MEIO_A_MEIO" && (
+          <PizzaSelector />
+        )}
 
         {isLoading && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -305,7 +330,10 @@ function CardapioPage() {
           </p>
         )}
 
-        {!isLoading && !isError && filtered.length > 0 && (
+        {!isLoading &&
+          !isError &&
+          orderMode === "INTEIRA" &&
+          filtered.length > 0 && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {filtered.map((product) => (
               <MenuCard key={product.id} product={product} />
