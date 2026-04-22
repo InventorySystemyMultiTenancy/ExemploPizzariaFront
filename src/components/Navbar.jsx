@@ -93,7 +93,7 @@ export default function Navbar({ activeLink }) {
             Cardápio
           </Link>
 
-          {isAuthenticated ? (
+          {isAuthenticated && user?.role !== "MESA" ? (
             <>
               <Link
                 className="text-sm text-gray-500 transition-colors hover:text-rosso"
@@ -109,14 +109,14 @@ export default function Navbar({ activeLink }) {
                 Sair
               </button>
             </>
-          ) : (
+          ) : !isAuthenticated ? (
             <Link
               className="text-sm text-gray-600 transition-colors hover:text-rosso"
               to="/login"
             >
               Entrar
             </Link>
-          )}
+          ) : null}
 
           {/* Pagamento pendente (só MESA) */}
           {hasPendingPayment && (
