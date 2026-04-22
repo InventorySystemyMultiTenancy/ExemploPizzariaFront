@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { api } from "../lib/api.js";
 
 const WHATSAPP_NUMBER = "5511971174080";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
@@ -28,6 +30,22 @@ function WhatsAppIcon() {
 export default function Navbar({ activeLink }) {
   const { openCart, items } = useCart();
   const { isAuthenticated, user, logout } = useAuth();
+
+  const { data: mesaOrders = [] } = useQuery({
+    queryKey: ["mesa-orders"],
+    queryFn: async () => {
+      const res = await api.get("/mesa/orders");
+      return res.data?.data ?? [];
+    },
+    enabled: user?.role === "MESA",
+    refetchInterval: 15000,
+  });
+
+  const hasPendingPayment =
+    user?.role === "MESA" &&
+    mesaOrders.some(
+      (o) => o.paymentStatus !== "APROVADO" && o.status !== "CANCELADO",
+    );
 
   const painelTo =
     user?.role === "ADMIN" || user?.role === "FUNCIONARIO"
@@ -97,6 +115,16 @@ export default function Navbar({ activeLink }) {
               to="/login"
             >
               Entrar
+            </Link>
+          )}
+
+          {/* Pagamento pendente (só MESA) */}
+          {hasPendingPayment && (
+            <Link
+              to="/mesa/checkout"
+              className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 animate-pulse"
+            >
+              💳 Pagar
             </Link>
           )}
 

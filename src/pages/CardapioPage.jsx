@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
 import Navbar from "../components/Navbar.jsx";
 import PizzaSelector from "../components/PizzaSelector.jsx";
 import { useCart } from "../context/CartContext.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 
 const SIZE_MAP = {
@@ -213,6 +215,26 @@ function CardapioPage() {
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [orderMode, setOrderMode] = useState("INTEIRA");
   const [search, setSearch] = useState("");
+  const { user } = useAuth();
+
+  const { data: mesaOrders = [] } = useQuery({
+    queryKey: ["mesa-orders"],
+    queryFn: async () => {
+      const res = await api.get("/mesa/orders");
+      return res.data?.data ?? [];
+    },
+    enabled: user?.role === "MESA",
+    refetchInterval: 30000,
+  });
+
+  const pendingTotal =
+    user?.role === "MESA"
+      ? mesaOrders
+          .filter(
+            (o) => o.paymentStatus !== "APROVADO" && o.status !== "CANCELADO",
+          )
+          .reduce((acc, o) => acc + Number(o.total), 0)
+      : 0;
 
   const {
     data: products = [],
@@ -253,7 +275,9 @@ function CardapioPage() {
   const filtered =
     activeCategory === "Todos"
       ? flavorProducts
-      : flavorProducts.filter((p) => (p.category ?? "Geral") === activeCategory);
+      : flavorProducts.filter(
+          (p) => (p.category ?? "Geral") === activeCategory,
+        );
   const searched = normalizedSearch
     ? filtered.filter((product) =>
         [product.name, product.description, product.category]
@@ -404,17 +428,37 @@ function CardapioPage() {
           !isError &&
           orderMode === "INTEIRA" &&
           searched.length > 0 && (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {searched.map((product) => (
-              <MenuCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {searched.map((product) => (
+                <MenuCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
       </section>
 
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
         Pizzaria Fellice © 2024 · O seu momento de ser feliz!
       </footer>
+
+      {/* Banner fixo de pagamento pendente (só MESA) */}
+      {pendingTotal > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 p-3">
+          <Link
+            to="/mesa/checkout"
+            className="flex items-center justify-between gap-3 rounded-2xl bg-amber-500 px-5 py-4 shadow-2xl text-white font-semibold"
+          >
+            <span className="flex items-center gap-2 text-sm">
+              💳 Pagamento pendente
+            </span>
+            <span className="text-base font-bold">
+              {Number(pendingTotal).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+            </span>
+          </Link>
+        </div>
+      )}
 
       <CartDrawer />
     </main>

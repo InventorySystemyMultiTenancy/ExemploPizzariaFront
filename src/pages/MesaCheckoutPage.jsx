@@ -352,7 +352,9 @@ function MesaCheckoutPage() {
         ))}
         <div className="border-t border-gray-100 pt-2 flex justify-between font-bold">
           <span>Total</span>
-          <span>{currency(subtotal)}</span>
+          <span>
+            {createdOrderId ? currency(createdOrderTotal) : currency(subtotal)}
+          </span>
         </div>
       </div>
 
@@ -372,15 +374,17 @@ function MesaCheckoutPage() {
       </div>
 
       {/* Botão confirmar pedido */}
-      <button
-        onClick={() => orderMutation.mutate()}
-        disabled={orderMutation.isPending || items.length === 0}
-        className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white hover:opacity-90 disabled:opacity-50 mb-3"
-      >
-        {orderMutation.isPending
-          ? "Enviando..."
-          : `Confirmar pedido • ${currency(subtotal)}`}
-      </button>
+      {!createdOrderId && (
+        <button
+          onClick={() => orderMutation.mutate()}
+          disabled={orderMutation.isPending || items.length === 0}
+          className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white hover:opacity-90 disabled:opacity-50 mb-3"
+        >
+          {orderMutation.isPending
+            ? "Enviando..."
+            : `Confirmar pedido • ${currency(subtotal)}`}
+        </button>
+      )}
 
       {/* Após confirmar, oferecer pagamento */}
       {createdOrderId && (
