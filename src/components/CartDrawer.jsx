@@ -12,7 +12,7 @@ import {
 
 function CartDrawer() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const {
     items,
     isCartOpen,
@@ -34,7 +34,9 @@ function CartDrawer() {
   });
 
   const crusts = products.filter((product) => product.isCrust);
-  const flavorsById = indexProductsById(products.filter((product) => !product.isCrust));
+  const flavorsById = indexProductsById(
+    products.filter((product) => !product.isCrust),
+  );
   const crustsById = indexProductsById(crusts);
 
   const handleCrustChange = (item, crustProductId) => {
@@ -210,7 +212,9 @@ function CartDrawer() {
             disabled={!total}
             onClick={() => {
               closeCart();
-              if (!isAuthenticated) {
+              if (user?.role === "MESA") {
+                navigate("/mesa/checkout");
+              } else if (!isAuthenticated) {
                 navigate("/login?redirect=/checkout");
               } else {
                 navigate("/checkout");
