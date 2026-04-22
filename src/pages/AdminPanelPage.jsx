@@ -167,6 +167,16 @@ function AdminPanelPage() {
             Cadastrar motoboy, cozinha, funcionário ou admin
           </p>
         </Link>
+        <Link
+          to="/admin/mesas"
+          className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
+        >
+          <p className="text-2xl">🪑</p>
+          <h2 className="mt-2 font-semibold text-gray-900">Mesas</h2>
+          <p className="mt-1 text-xs text-smoke">
+            Cadastrar mesas, maquininhas e gerar QR codes
+          </p>
+        </Link>
       </div>
 
       {isLoading ? (
