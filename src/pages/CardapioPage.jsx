@@ -212,6 +212,7 @@ function MenuCard({ product }) {
 function CardapioPage() {
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [orderMode, setOrderMode] = useState("INTEIRA");
+  const [search, setSearch] = useState("");
 
   const {
     data: products = [],
@@ -224,6 +225,15 @@ function CardapioPage() {
       return res.data?.data ?? [];
     },
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: topProducts = [] } = useQuery({
+    queryKey: ["top-products"],
+    queryFn: async () => {
+      const res = await api.get("/products/top?limit=4");
+      return res.data?.data ?? [];
+    },
+    staleTime: 10 * 60 * 1000,
   });
 
   const categories = [
@@ -239,10 +249,18 @@ function CardapioPage() {
   ];
 
   const flavorProducts = products.filter((product) => !product.isCrust);
+  const normalizedSearch = search.trim().toLowerCase();
   const filtered =
     activeCategory === "Todos"
       ? flavorProducts
       : flavorProducts.filter((p) => (p.category ?? "Geral") === activeCategory);
+  const searched = normalizedSearch
+    ? filtered.filter((product) =>
+        [product.name, product.description, product.category]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedSearch)),
+      )
+    : filtered;
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
@@ -299,6 +317,21 @@ function CardapioPage() {
             </button>
           ))}
         </div>
+
+        {orderMode === "INTEIRA" ? (
+          <div className="mt-4">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+              Buscar no cardapio
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Ex: calabresa, frango, doce..."
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-rosso/40"
+            />
+          </div>
+        ) : null}
       </section>
 
       {/* Product grid */}
@@ -306,6 +339,33 @@ function CardapioPage() {
         {!isLoading && !isError && orderMode === "MEIO_A_MEIO" && (
           <PizzaSelector />
         )}
+
+        {!isLoading &&
+          !isError &&
+          orderMode === "INTEIRA" &&
+          topProducts.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
+                    Favoritas da casa
+                  </p>
+                  <h2 className="mt-1 font-display text-2xl text-gray-900">
+                    Mais Pedidas
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Os sabores que mais saem no momento
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {topProducts.map((product) => (
+                  <MenuCard key={`top-${product.id}`} product={product} />
+                ))}
+              </div>
+            </div>
+          )}
 
         {isLoading && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -332,10 +392,20 @@ function CardapioPage() {
 
         {!isLoading &&
           !isError &&
+          filtered.length > 0 &&
+          searched.length === 0 &&
+          orderMode === "INTEIRA" && (
+            <p className="py-16 text-center text-gray-400">
+              Nenhum item encontrado para "{search}".
+            </p>
+          )}
+
+        {!isLoading &&
+          !isError &&
           orderMode === "INTEIRA" &&
-          filtered.length > 0 && (
+          searched.length > 0 && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {filtered.map((product) => (
+            {searched.map((product) => (
               <MenuCard key={product.id} product={product} />
             ))}
           </div>

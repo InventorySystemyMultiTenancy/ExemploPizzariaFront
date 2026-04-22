@@ -42,22 +42,39 @@ export function CartProvider({ children }) {
     localStorage.setItem(storageKey(userId), JSON.stringify(items));
   }, [items, userId]);
 
-  const addItem = (item) => {
+  const addItems = (itemsToAdd, { silent = false } = {}) => {
     setItems((prev) => {
-      const existing = prev.find((entry) => entry.key === item.key);
+      let next = [...prev];
 
-      if (existing) {
-        return prev.map((entry) =>
-          entry.key === item.key
-            ? { ...entry, quantity: entry.quantity + (item.quantity || 1) }
-            : entry,
-        );
+      for (const item of itemsToAdd) {
+        const existing = next.find((entry) => entry.key === item.key);
+
+        if (existing) {
+          next = next.map((entry) =>
+            entry.key === item.key
+              ? { ...entry, quantity: entry.quantity + (item.quantity || 1) }
+              : entry,
+          );
+          continue;
+        }
+
+        next = [...next, { ...item, quantity: item.quantity || 1 }];
       }
 
-      return [...prev, { ...item, quantity: item.quantity || 1 }];
+      return next;
     });
 
-    toast.success("Pizza adicionada ao carrinho");
+    if (!silent) {
+      toast.success(
+        itemsToAdd.length > 1
+          ? "Itens adicionados ao carrinho"
+          : "Pizza adicionada ao carrinho",
+      );
+    }
+  };
+
+  const addItem = (item) => {
+    addItems([item]);
   };
 
   const updateItem = (key, updater) => {
@@ -108,6 +125,7 @@ export function CartProvider({ children }) {
       openCart: () => setIsCartOpen(true),
       closeCart: () => setIsCartOpen(false),
       addItem,
+      addItems,
       updateItem,
       updateQuantity,
       removeItem,

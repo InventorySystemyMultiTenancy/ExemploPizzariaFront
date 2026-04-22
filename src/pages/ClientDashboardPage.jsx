@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import OrderTracker from "../components/OrderTracker.jsx";
+import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 
@@ -56,7 +59,9 @@ const formatDate = (iso) =>
   });
 
 function ClientDashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { addItems, openCart } = useCart();
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState("TODOS");
   const [expandedId, setExpandedId] = useState(null);
@@ -98,6 +103,65 @@ function ClientDashboardPage() {
     activeFilter === "TODOS"
       ? orders
       : orders.filter((o) => o.status === activeFilter);
+
+  const handleRepeatOrder = (order) => {
+    const cartItems = (order.items ?? [])
+      .map((item) => {
+        const size = item.size;
+        const crustProductId = item.crustProductId ?? undefined;
+        const flavorIds =
+          item.type === "MEIO_A_MEIO"
+            ? [item.firstHalfProductId, item.secondHalfProductId].filter(Boolean)
+            : [item.productId].filter(Boolean);
+
+        if (!size || !flavorIds.length) {
+          return null;
+        }
+
+        const descriptionParts = [];
+
+        if (item.type === "MEIO_A_MEIO") {
+          descriptionParts.push(
+            `${item.firstHalfProductName ?? "?"} / ${item.secondHalfProductName ?? "?"}`,
+          );
+        } else {
+          descriptionParts.push(item.productName ?? "Pizza");
+        }
+
+        descriptionParts.push(size);
+
+        if (item.crustProductName) {
+          descriptionParts.push(`Borda ${item.crustProductName}`);
+        }
+
+        return {
+          key: `${item.type}-${size}-${crustProductId ?? "sem-borda"}-${flavorIds.sort().join("-")}`,
+          title: item.type === "MEIO_A_MEIO" ? "Pizza Meio a Meio" : "Pizza Inteira",
+          description: descriptionParts.join(" | "),
+          basePrice:
+            Number(item.unitPrice) - Number(item.crustUnitPrice ?? 0),
+          price: Number(item.unitPrice),
+          quantity: Number(item.quantity ?? 1),
+          payload: {
+            type: item.type,
+            size,
+            crustProductId,
+            flavors: flavorIds,
+          },
+        };
+      })
+      .filter(Boolean);
+
+    if (!cartItems.length) {
+      toast.error("Nao foi possivel repetir este pedido.");
+      return;
+    }
+
+    addItems(cartItems, { silent: true });
+    toast.success("Pedido adicionado novamente ao carrinho.");
+    openCart();
+    navigate("/cardapio");
+  };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-6 text-gray-900 sm:px-6">
@@ -291,6 +355,16 @@ function ClientDashboardPage() {
                       Entrega: {order.deliveryAddress}
                     </p>
                   )}
+
+                  {order.status !== "CANCELADO" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleRepeatOrder(order)}
+                      className="mt-4 w-full rounded-2xl border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/20"
+                    >
+                      Repetir pedido
+                    </button>
+                  ) : null}
 
                   {order.status === "CANCELADO" && (
                     <div className="mt-4 flex gap-2">
