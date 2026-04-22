@@ -60,6 +60,18 @@ export function CartProvider({ children }) {
     toast.success("Pizza adicionada ao carrinho");
   };
 
+  const updateItem = (key, updater) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.key === key
+          ? typeof updater === "function"
+            ? updater(item)
+            : { ...item, ...updater }
+          : item,
+      ),
+    );
+  };
+
   const updateQuantity = (key, quantity) => {
     setItems((prev) =>
       prev
@@ -96,6 +108,7 @@ export function CartProvider({ children }) {
       openCart: () => setIsCartOpen(true),
       closeCart: () => setIsCartOpen(false),
       addItem,
+      updateItem,
       updateQuantity,
       removeItem,
       clearCart,

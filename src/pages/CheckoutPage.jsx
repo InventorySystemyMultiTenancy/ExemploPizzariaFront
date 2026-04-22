@@ -24,6 +24,7 @@ const mapItemToApi = (item) => {
       firstHalfProductId: payload.flavors[0],
       secondHalfProductId: payload.flavors[1],
       size: payload.size,
+      crustProductId: payload.crustProductId,
       quantity: item.quantity,
     };
   }
@@ -31,6 +32,7 @@ const mapItemToApi = (item) => {
     type: "INTEIRA",
     productId: payload.flavors[0],
     size: payload.size,
+    crustProductId: payload.crustProductId,
     quantity: item.quantity,
   };
 };

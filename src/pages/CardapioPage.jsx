@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import CartDrawer from "../components/CartDrawer.jsx";
 import Navbar from "../components/Navbar.jsx";
+import PizzaSelector from "../components/PizzaSelector.jsx";
 import { useCart } from "../context/CartContext.jsx";
-import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
 
 const SIZE_MAP = {
@@ -38,12 +37,13 @@ function SizePickerModal({ product, onClose }) {
       key: `${product.id}-${selectedSize}`,
       title: product.name,
       description: `${SIZE_MAP[selectedSize] ?? selectedSize}`,
+      basePrice: Number(selectedEntry.price),
       price: Number(selectedEntry.price),
       quantity: 1,
       payload: {
         type: "INTEIRA",
         size: selectedSize,
-        crust: "TRADICIONAL",
+        crustProductId: undefined,
         flavors: [product.id],
       },
     });
@@ -228,14 +228,20 @@ function CardapioPage() {
   const categories = [
     "Todos",
     ...Array.from(
-      new Set(products.map((p) => p.category ?? "Geral").filter(Boolean)),
+      new Set(
+        products
+          .filter((product) => !product.isCrust)
+          .map((p) => p.category ?? "Geral")
+          .filter(Boolean),
+      ),
     ),
   ];
 
+  const flavorProducts = products.filter((product) => !product.isCrust);
   const filtered =
     activeCategory === "Todos"
-      ? products
-      : products.filter((p) => (p.category ?? "Geral") === activeCategory);
+      ? flavorProducts
+      : flavorProducts.filter((p) => (p.category ?? "Geral") === activeCategory);
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
@@ -274,8 +280,10 @@ function CardapioPage() {
 
       {/* Product grid */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+        {!isLoading && !isError && <PizzaSelector />}
+
         {isLoading && (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -298,7 +306,7 @@ function CardapioPage() {
         )}
 
         {!isLoading && !isError && filtered.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {filtered.map((product) => (
               <MenuCard key={product.id} product={product} />
             ))}

@@ -1,6 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { api } from "../lib/api.js";
+import {
+  buildPizzaDescription,
+  getPizzaBasePrice,
+  getPizzaPrice,
+  indexProductsById,
+} from "../lib/pizzaBuilder.js";
 
 function CartDrawer() {
   const navigate = useNavigate();
@@ -9,11 +17,68 @@ function CartDrawer() {
     items,
     isCartOpen,
     closeCart,
+    updateItem,
     updateQuantity,
     removeItem,
     formatted,
     total,
   } = useCart();
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const response = await api.get("/products");
+      return response.data?.data ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const crusts = products.filter((product) => product.isCrust);
+  const flavorsById = indexProductsById(products.filter((product) => !product.isCrust));
+  const crustsById = indexProductsById(crusts);
+
+  const handleCrustChange = (item, crustProductId) => {
+    const flavorIds = item.payload?.flavors ?? [];
+    const size = item.payload?.size;
+    const type = item.payload?.type ?? "INTEIRA";
+
+    if (!size || !flavorIds.length) return;
+
+    const nextCrustProductId = crustProductId || undefined;
+    const basePrice =
+      item.basePrice ??
+      getPizzaBasePrice({
+        productsById: flavorsById,
+        flavorIds,
+        size,
+        type,
+      });
+
+    const price = getPizzaPrice({
+      productsById: flavorsById,
+      crustsById,
+      flavorIds,
+      size,
+      type,
+      crustProductId: nextCrustProductId,
+    });
+
+    updateItem(item.key, {
+      basePrice,
+      price,
+      description: buildPizzaDescription({
+        productsById: flavorsById,
+        crustsById,
+        flavorIds,
+        size,
+        crustProductId: nextCrustProductId,
+      }),
+      payload: {
+        ...item.payload,
+        crustProductId: nextCrustProductId,
+      },
+    });
+  };
 
   return (
     <>
@@ -55,6 +120,28 @@ function CartDrawer() {
               >
                 <h4 className="font-semibold text-gray-900">{item.title}</h4>
                 <p className="mt-1 text-xs text-smoke">{item.description}</p>
+
+                {item.payload?.size && item.payload?.flavors?.length ? (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-smoke">
+                      Borda recheada
+                    </label>
+                    <select
+                      value={item.payload?.crustProductId ?? ""}
+                      onChange={(event) =>
+                        handleCrustChange(item, event.target.value)
+                      }
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-gold/40"
+                    >
+                      <option value="">Sem borda</option>
+                      {crusts.map((crust) => (
+                        <option key={crust.id} value={crust.id}>
+                          {crust.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">

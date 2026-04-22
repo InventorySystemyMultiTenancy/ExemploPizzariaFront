@@ -15,6 +15,7 @@ const emptyForm = () => ({
   description: "",
   imageUrl: "",
   category: "",
+  isCrust: false,
   sizes: SIZES.map((size) => ({ size, price: "", costPrice: "" })),
 });
 
@@ -29,6 +30,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       description: product.description ?? "",
       imageUrl: product.imageUrl ?? "",
       category: product.category ?? "",
+      isCrust: Boolean(product.isCrust),
       sizes: SIZES.map((size) => {
         const existing = product.sizes?.find((s) => s.size === size);
         return {
@@ -100,6 +102,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       description: form.description.trim() || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
       category: form.category.trim() || undefined,
+      isCrust: form.isCrust,
       sizes: form.sizes
         .filter((s) => s.price !== "")
         .map((s) => ({
@@ -171,6 +174,36 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                 <option key={cat} value={cat} />
               ))}
             </datalist>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
+              Tipo do produto
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, isCrust: false }))}
+                className={`rounded-2xl border py-3 text-sm font-semibold transition ${
+                  !form.isCrust
+                    ? "border-gold/40 bg-gold/10 text-gold"
+                    : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
+                }`}
+              >
+                Sabor / Pizza
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, isCrust: true }))}
+                className={`rounded-2xl border py-3 text-sm font-semibold transition ${
+                  form.isCrust
+                    ? "border-gold/40 bg-gold/10 text-gold"
+                    : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
+                }`}
+              >
+                Borda recheada
+              </button>
+            </div>
           </div>
 
           {/* Image URL */}
@@ -351,6 +384,17 @@ function ProductCard({ product, onEdit }) {
         >
           {product.isActive ? "Ativo" : "Inativo"}
         </span>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1">
+        <span className="rounded-xl bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
+          {product.isCrust ? "Borda recheada" : "Sabor"}
+        </span>
+        {product.category ? (
+          <span className="rounded-xl bg-gray-200 px-2 py-0.5 text-xs text-smoke">
+            {product.category}
+          </span>
+        ) : null}
       </div>
 
       {/* Sizes */}

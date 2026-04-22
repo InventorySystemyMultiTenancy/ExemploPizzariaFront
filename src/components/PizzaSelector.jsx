@@ -2,19 +2,14 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "../context/CartContext.jsx";
 import { api } from "../lib/api.js";
-
-const crusts = [
-  { id: "TRADICIONAL", label: "Tradicional", extra: 0 },
-  { id: "CATUPIRY", label: "Recheada Catupiry", extra: 8 },
-  { id: "CHEDDAR", label: "Recheada Cheddar", extra: 10 },
-];
-
-const SIZE_LABEL = {
-  PEQUENA: "Pequena",
-  MEDIA: "Media",
-  GRANDE: "Grande",
-  FAMILIA: "Familia",
-};
+import {
+  buildPizzaDescription,
+  getCrustPrice,
+  getPizzaBasePrice,
+  getPizzaPrice,
+  indexProductsById,
+  SIZE_LABEL,
+} from "../lib/pizzaBuilder.js";
 
 const formatCurrency = (value) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -22,7 +17,8 @@ const formatCurrency = (value) =>
 function PizzaSelector() {
   const { addItem, openCart } = useCart();
   const [selectedSizeKey, setSelectedSizeKey] = useState("GRANDE");
-  const [crust, setCrust] = useState(crusts[0]);
+  const [selectedType, setSelectedType] = useState("INTEIRA");
+  const [selectedCrustId, setSelectedCrustId] = useState("");
   const [selectedFlavors, setSelectedFlavors] = useState([]);
 
   const {
@@ -38,64 +34,126 @@ function PizzaSelector() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const flavorProducts = useMemo(
+    () => products.filter((product) => !product.isCrust),
+    [products],
+  );
+  const crustProducts = useMemo(
+    () => products.filter((product) => product.isCrust),
+    [products],
+  );
+  const productsById = useMemo(
+    () => indexProductsById(flavorProducts),
+    [flavorProducts],
+  );
+  const crustsById = useMemo(
+    () => indexProductsById(crustProducts),
+    [crustProducts],
+  );
+
   const sizeOptions = useMemo(() => {
-    if (!products.length) return [];
-    return (products[0].sizes ?? []).map((s) => ({
-      id: s.size,
-      label: SIZE_LABEL[s.size] ?? s.size,
+    if (!flavorProducts.length) return [];
+    return (flavorProducts[0].sizes ?? []).map((sizeEntry) => ({
+      id: sizeEntry.size,
+      label: SIZE_LABEL[sizeEntry.size] ?? sizeEntry.size,
     }));
-  }, [products]);
+  }, [flavorProducts]);
 
   const selectedSize =
-    sizeOptions.find((s) => s.id === selectedSizeKey) ?? sizeOptions[0];
+    sizeOptions.find((option) => option.id === selectedSizeKey) ??
+    sizeOptions[0];
+  const maxFlavors = selectedType === "MEIO_A_MEIO" ? 2 : 1;
+  const isHalfHalf = selectedType === "MEIO_A_MEIO";
 
-  const isHalfHalf = selectedFlavors.length === 2;
+  const pizzaBasePrice = useMemo(
+    () =>
+      getPizzaBasePrice({
+        productsById,
+        flavorIds: selectedFlavors,
+        size: selectedSizeKey,
+        type: selectedType,
+      }),
+    [productsById, selectedFlavors, selectedSizeKey, selectedType],
+  );
 
-  const getProductPrice = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product) return 0;
-    const sizeEntry = product.sizes?.find((s) => s.size === selectedSizeKey);
-    return sizeEntry ? Number(sizeEntry.price) : 0;
-  };
+  const crustPrice = useMemo(
+    () =>
+      getCrustPrice({
+        crustsById,
+        crustProductId: selectedCrustId || undefined,
+        size: selectedSizeKey,
+      }),
+    [crustsById, selectedCrustId, selectedSizeKey],
+  );
 
-  const pizzaPrice = useMemo(() => {
-    if (!selectedFlavors.length) return 0;
-    const prices = selectedFlavors.map(getProductPrice);
-    const basePrice = isHalfHalf ? Math.max(...prices) : prices[0];
-    return Math.round((basePrice + crust.extra) * 100) / 100;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFlavors, selectedSizeKey, crust, isHalfHalf, products]);
+  const pizzaPrice = useMemo(
+    () =>
+      getPizzaPrice({
+        productsById,
+        crustsById,
+        flavorIds: selectedFlavors,
+        size: selectedSizeKey,
+        type: selectedType,
+        crustProductId: selectedCrustId || undefined,
+      }),
+    [
+      productsById,
+      crustsById,
+      selectedFlavors,
+      selectedSizeKey,
+      selectedType,
+      selectedCrustId,
+    ],
+  );
 
-  const description = useMemo(() => {
-    if (!selectedFlavors.length) return "Escolha seus sabores";
-    const names = selectedFlavors
-      .map((id) => products.find((p) => p.id === id)?.name)
-      .filter(Boolean);
-    return names.join(" / ");
-  }, [selectedFlavors, products]);
+  const description = useMemo(
+    () =>
+      buildPizzaDescription({
+        productsById,
+        crustsById,
+        flavorIds: selectedFlavors,
+        size: selectedSizeKey,
+        crustProductId: selectedCrustId || undefined,
+      }),
+    [productsById, crustsById, selectedFlavors, selectedSizeKey, selectedCrustId],
+  );
 
   const toggleFlavor = (productId) => {
     setSelectedFlavors((prev) => {
-      if (prev.includes(productId))
+      if (prev.includes(productId)) {
         return prev.filter((id) => id !== productId);
-      if (prev.length >= 2) return prev;
+      }
+
+      if (prev.length >= maxFlavors) {
+        return prev;
+      }
+
       return [...prev, productId];
     });
   };
 
+  const handleTypeChange = (type) => {
+    setSelectedType(type);
+    setSelectedFlavors((prev) => prev.slice(0, type === "MEIO_A_MEIO" ? 2 : 1));
+  };
+
   const handleAddToCart = () => {
     if (!selectedFlavors.length || !selectedSize) return;
-    const key = `${selectedSize.id}-${crust.id}-${[...selectedFlavors].sort().join("-")}`;
+
+    const crustKeyPart = selectedCrustId || "sem-borda";
+    const flavorKey = [...selectedFlavors].sort().join("-");
+
     addItem({
-      key,
+      key: `${selectedType}-${selectedSize.id}-${crustKeyPart}-${flavorKey}`,
       title: isHalfHalf ? "Pizza Meio a Meio" : "Pizza Inteira",
-      description: `${description} | ${selectedSize.label} | ${crust.label}`,
+      description,
+      basePrice: pizzaBasePrice,
       price: pizzaPrice,
       quantity: 1,
       payload: {
-        type: isHalfHalf ? "MEIO_A_MEIO" : "INTEIRA",
+        type: selectedType,
         size: selectedSize.id,
-        crust: crust.id,
+        crustProductId: selectedCrustId || undefined,
         flavors: selectedFlavors,
       },
     });
@@ -108,15 +166,15 @@ function PizzaSelector() {
         <div className="animate-pulse space-y-3">
           <div className="h-6 w-1/3 rounded bg-gray-100" />
           <div className="h-4 w-2/3 rounded bg-gray-100" />
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 rounded-2xl bg-gray-50" />
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="h-24 rounded-2xl bg-gray-50" />
           ))}
         </div>
       </section>
     );
   }
 
-  if (isError || !products.length) {
+  if (isError || !flavorProducts.length) {
     return (
       <section className="rounded-3xl border border-red-100 bg-red-50/40 p-6 shadow-sm">
         <p className="text-center text-gray-500">
@@ -133,11 +191,36 @@ function PizzaSelector() {
           Monte sua Pizza
         </h2>
         <p className="mt-1 text-sm text-gray-400">
-          Escolha tamanho, borda e até 2 sabores
+          Escolha inteira ou meio a meio, tamanho, borda e sabores.
         </p>
       </header>
 
       <div className="space-y-5">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+            Tipo
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: "INTEIRA", label: "Pizza Inteira" },
+              { id: "MEIO_A_MEIO", label: "Meio a Meio" },
+            ].map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => handleTypeChange(option.id)}
+                className={`rounded-xl border py-3 text-sm font-semibold transition-all duration-200 ${
+                  selectedType === option.id
+                    ? "border-rosso bg-rosso/8 text-rosso ring-1 ring-rosso/30"
+                    : "border-gray-200 bg-gray-50 text-gray-700 hover:border-rosso/40"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
             Tamanho
@@ -162,28 +245,47 @@ function PizzaSelector() {
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
-            Borda
+            Borda recheada
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            {crusts.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setCrust(option)}
-                className={`rounded-xl border px-3 py-3 text-left text-xs transition-all duration-200 sm:text-sm ${
-                  crust.id === option.id
-                    ? "border-rosso bg-rosso/8 text-gray-900 ring-1 ring-rosso/30"
-                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-rosso/40"
-                }`}
-              >
-                <span className="block font-semibold">{option.label}</span>
-                {option.extra > 0 && (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setSelectedCrustId("")}
+              className={`rounded-xl border px-3 py-3 text-left text-xs transition-all duration-200 sm:text-sm ${
+                !selectedCrustId
+                  ? "border-rosso bg-rosso/8 text-gray-900 ring-1 ring-rosso/30"
+                  : "border-gray-200 bg-gray-50 text-gray-600 hover:border-rosso/40"
+              }`}
+            >
+              <span className="block font-semibold">Sem borda</span>
+              <span className="text-[10px] text-gray-400">Sem adicional</span>
+            </button>
+
+            {crustProducts.map((crust) => {
+              const additionalPrice = getCrustPrice({
+                crustsById,
+                crustProductId: crust.id,
+                size: selectedSizeKey,
+              });
+
+              return (
+                <button
+                  key={crust.id}
+                  type="button"
+                  onClick={() => setSelectedCrustId(crust.id)}
+                  className={`rounded-xl border px-3 py-3 text-left text-xs transition-all duration-200 sm:text-sm ${
+                    selectedCrustId === crust.id
+                      ? "border-rosso bg-rosso/8 text-gray-900 ring-1 ring-rosso/30"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-rosso/40"
+                  }`}
+                >
+                  <span className="block font-semibold">{crust.name}</span>
                   <span className="text-[10px] text-gold">
-                    +{formatCurrency(option.extra)}
+                    +{formatCurrency(additionalPrice)}
                   </span>
-                )}
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -193,14 +295,19 @@ function PizzaSelector() {
               Sabores
             </p>
             <p className="text-xs font-bold text-rosso">
-              {selectedFlavors.length}/2
+              {selectedFlavors.length}/{maxFlavors}
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {products.map((product) => {
+            {flavorProducts.map((product) => {
               const selected = selectedFlavors.includes(product.id);
-              const blocked = !selected && selectedFlavors.length === 2;
-              const priceForSize = getProductPrice(product.id);
+              const blocked = !selected && selectedFlavors.length === maxFlavors;
+              const priceForSize = getPizzaBasePrice({
+                productsById,
+                flavorIds: [product.id],
+                size: selectedSizeKey,
+                type: "INTEIRA",
+              });
 
               return (
                 <button
@@ -208,9 +315,9 @@ function PizzaSelector() {
                   type="button"
                   onClick={() => toggleFlavor(product.id)}
                   disabled={blocked}
-                  className={`rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
+                  className={`overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
                     selected
-                      ? "border-rosso ring-2 ring-rosso/20 bg-rose-50 text-gray-900"
+                      ? "border-rosso bg-rose-50 text-gray-900 ring-2 ring-rosso/20"
                       : "border-gray-200 bg-white text-gray-700 hover:border-rosso/30 hover:shadow-sm"
                   } ${blocked ? "opacity-40" : "opacity-100"}`}
                 >
@@ -219,16 +326,18 @@ function PizzaSelector() {
                       src={product.imageUrl}
                       alt={product.name}
                       className="h-32 w-full object-cover"
-                      onError={(e) => (e.currentTarget.style.display = "none")}
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
                     />
                   )}
                   <div className="flex items-center justify-between px-3 py-2.5">
                     <div className="min-w-0">
-                      <span className="block font-semibold text-sm leading-tight">
+                      <span className="block text-sm font-semibold leading-tight">
                         {product.name}
                       </span>
                       {product.description && (
-                        <p className="mt-0.5 text-xs text-gray-400 line-clamp-1">
+                        <p className="mt-0.5 line-clamp-1 text-xs text-gray-400">
                           {product.description}
                         </p>
                       )}
@@ -246,14 +355,22 @@ function PizzaSelector() {
 
       <footer className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 shadow-sm">
         <p className="text-sm text-gray-400">{description}</p>
-        <p className="mt-1 text-3xl font-bold text-rosso">
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+          <span>Pizza</span>
+          <span>{formatCurrency(pizzaBasePrice)}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+          <span>Borda</span>
+          <span>{formatCurrency(crustPrice)}</span>
+        </div>
+        <p className="mt-2 text-3xl font-bold text-rosso">
           {formatCurrency(pizzaPrice)}
         </p>
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={!selectedFlavors.length}
-          className="mt-4 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-ember hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={selectedFlavors.length !== maxFlavors}
+          className="mt-4 w-full rounded-2xl bg-rosso px-5 py-4 text-base font-bold text-white shadow-md transition-all duration-200 hover:scale-[1.01] hover:bg-ember disabled:cursor-not-allowed disabled:opacity-40"
         >
           Adicionar ao Carrinho
         </button>

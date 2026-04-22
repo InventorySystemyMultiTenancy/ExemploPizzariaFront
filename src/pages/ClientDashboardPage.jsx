@@ -21,9 +21,12 @@ function buildWhatsAppUrl(order, userName) {
     .map((item) => {
       const name =
         item.type === "MEIO_A_MEIO"
-          ? `Meio a Meio (${item.firstHalfProduct?.name ?? "?"} / ${item.secondHalfProduct?.name ?? "?"})`
-          : (item.product?.name ?? "Pizza");
-      return `  - ${name} ${item.size} x${item.quantity}`;
+          ? `Meio a Meio (${item.firstHalfProductName ?? "?"} / ${item.secondHalfProductName ?? "?"})`
+          : (item.productName ?? "Pizza");
+      const crust = item.crustProductName
+        ? ` com borda ${item.crustProductName}`
+        : "";
+      return `  - ${name}${crust} ${item.size} x${item.quantity}`;
     })
     .join("\n");
   const msg = `Olá! Sou ${userName}.\nMeu pedido ${shortId} feito em ${date} com os itens:\n${itemLines}\nfoi cancelado. Gostaria de entender o motivo.`;
@@ -246,12 +249,17 @@ function ClientDashboardPage() {
                           <p className="text-sm font-semibold">
                             {item.type === "MEIO_A_MEIO"
                               ? "Meio a Meio"
-                              : (item.product?.name ?? "Pizza")}
+                              : (item.productName ?? "Pizza")}
                           </p>
                           {item.type === "MEIO_A_MEIO" && (
                             <p className="text-xs text-smoke">
-                              {item.firstHalfProduct?.name} /{" "}
-                              {item.secondHalfProduct?.name}
+                              {item.firstHalfProductName} /{" "}
+                              {item.secondHalfProductName}
+                            </p>
+                          )}
+                          {item.crustProductName && (
+                            <p className="text-xs text-smoke">
+                              Borda: {item.crustProductName}
                             </p>
                           )}
                           <p className="text-xs text-smoke">
