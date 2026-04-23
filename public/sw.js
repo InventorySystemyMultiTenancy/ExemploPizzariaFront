@@ -1,4 +1,4 @@
-const CACHE_NAME = "fellice-shell-v1";
+const CACHE_NAME = "fellice-shell-v2";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -43,7 +43,9 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/") || caches.match("/index.html")),
+      fetch(request).catch(
+        () => caches.match("/") || caches.match("/index.html"),
+      ),
     );
     return;
   }
