@@ -16,6 +16,9 @@ import {
   subscribeToStaffUnreadCount,
 } from "../lib/staffAlertsStore.js";
 
+const currency = (v) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 function AdminPanelPage() {
   const [now, setNow] = useState(() => Date.now());
   const [unreadCount, setUnreadCount] = useState(() => getStaffUnreadCount());
@@ -44,6 +47,16 @@ function AdminPanelPage() {
   });
 
   const currentNow = new Date(now);
+
+  // Mesas com pagamento pendente (derivado da mesma query, sem request extra)
+  const pendingMesaOrders = useMemo(() => {
+    if (!data) return [];
+    return data.filter(
+      (o) =>
+        o.mesaId && o.paymentStatus !== "APROVADO" && o.status !== "CANCELADO",
+    );
+  }, [data]);
+
   const prioritizedOrders = useMemo(
     () =>
       [...(data ?? [])]
@@ -188,56 +201,99 @@ function AdminPanelPage() {
         </p>
       ) : null}
 
-      <section className="mt-5 rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-xl text-gold">
-            Fila Prioritaria (preview)
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDesktopToggle}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                desktopEnabled
-                  ? "border-gold/30 text-gold hover:bg-gold/10"
-                  : "border-gray-200 text-smoke hover:border-gold/30 hover:text-gold"
-              }`}
-            >
-              Desktop {desktopEnabled ? "ligado" : "desligado"}
-            </button>
-            <button
-              type="button"
-              onClick={() => clearStaffUnreadCount()}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
-            >
-              Marcar alertas como vistos {unreadCount ? `(${unreadCount})` : ""}
-            </button>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {/* Fila Prioritária */}
+        <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl text-gold">
+              Fila Prioritaria (preview)
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDesktopToggle}
+                className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                  desktopEnabled
+                    ? "border-gold/30 text-gold hover:bg-gold/10"
+                    : "border-gray-200 text-smoke hover:border-gold/30 hover:text-gold"
+                }`}
+              >
+                Desktop {desktopEnabled ? "ligado" : "desligado"}
+              </button>
+              <button
+                type="button"
+                onClick={() => clearStaffUnreadCount()}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+              >
+                Marcar alertas como vistos{" "}
+                {unreadCount ? `(${unreadCount})` : ""}
+              </button>
+            </div>
           </div>
-        </div>
-        <ul className="mt-4 space-y-3 text-sm">
-          {prioritizedOrders.map((order) => (
-            <li
-              key={order.id}
-              className={`rounded-xl border bg-gray-100 p-3 ${
-                getOrderEta(order, currentNow)?.isOverdue
-                  ? "border-red-500/40"
-                  : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold">#{order.id.slice(0, 8)}</p>
-                <EstimatedTimeBadge compact now={currentNow} order={order} />
-              </div>
-              <p className="mt-1 text-smoke">Status: {order.status}</p>
-            </li>
-          ))}
-          {!prioritizedOrders.length && !isLoading ? (
-            <li className="text-sm text-smoke">
-              Sem pedidos para exibir no momento.
-            </li>
-          ) : null}
-        </ul>
-      </section>
+          <ul className="mt-4 space-y-3 text-sm">
+            {prioritizedOrders.map((order) => (
+              <li
+                key={order.id}
+                className={`rounded-xl border bg-gray-100 p-3 ${
+                  getOrderEta(order, currentNow)?.isOverdue
+                    ? "border-red-500/40"
+                    : "border-gray-200"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">#{order.id.slice(0, 8)}</p>
+                  <EstimatedTimeBadge compact now={currentNow} order={order} />
+                </div>
+                <p className="mt-1 text-smoke">Status: {order.status}</p>
+              </li>
+            ))}
+            {!prioritizedOrders.length && !isLoading ? (
+              <li className="text-sm text-smoke">
+                Sem pedidos para exibir no momento.
+              </li>
+            ) : null}
+          </ul>
+        </section>
+
+        {/* Mesas com pagamento pendente */}
+        <section className="rounded-3xl border border-amber-400/30 bg-lacquer/70 p-4 sm:p-6">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-xl text-amber-500">
+              💳 Pagamentos Pendentes
+            </h2>
+            {pendingMesaOrders.length > 0 && (
+              <span className="animate-pulse rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
+                {pendingMesaOrders.length}
+              </span>
+            )}
+          </div>
+          <ul className="mt-4 space-y-3 text-sm">
+            {pendingMesaOrders.map((order) => (
+              <li
+                key={order.id}
+                className="rounded-xl border border-amber-400/40 bg-amber-50 p-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-amber-800">
+                    🪑 {order.mesa?.name ?? `Mesa`}
+                  </p>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                    {currency(order.total)}
+                  </span>
+                </div>
+                <p className="mt-1 text-amber-700">
+                  #{order.id.slice(0, 8)} · {order.paymentStatus ?? "PENDENTE"}
+                </p>
+              </li>
+            ))}
+            {!pendingMesaOrders.length && !isLoading ? (
+              <li className="text-sm text-smoke">
+                Nenhuma mesa com pagamento pendente.
+              </li>
+            ) : null}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }
