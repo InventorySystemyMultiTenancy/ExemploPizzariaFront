@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -46,7 +47,7 @@ function PixScreen({ orderId, total, onClose }) {
   })();
 
   // Polling do status do pagamento
-  useQuery({
+  const { data: polledOrder } = useQuery({
     queryKey: ["mesa-order-status", orderId],
     queryFn: async () => {
       const res = await api.get(`/orders/${orderId}`);
@@ -54,14 +55,15 @@ function PixScreen({ orderId, total, onClose }) {
     },
     refetchInterval: 4000,
     enabled: !!orderId,
-    onSuccess: (order) => {
-      if (order?.paymentStatus === "APROVADO") {
-        toast.success("Pagamento confirmado! 🍕");
-        queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
-        onClose();
-      }
-    },
   });
+
+  useEffect(() => {
+    if (polledOrder?.paymentStatus === "APROVADO") {
+      toast.success("Pagamento confirmado! 🍕");
+      queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
+      onClose();
+    }
+  }, [polledOrder, queryClient, onClose]);
 
   const pix = pixMutation.data?.data?.data;
 
@@ -137,7 +139,7 @@ function TerminalScreen({ orderId, total, onClose }) {
   });
 
   // Polling do status
-  useQuery({
+  const { data: polledTerminalOrder } = useQuery({
     queryKey: ["mesa-order-status", orderId],
     queryFn: async () => {
       const res = await api.get(`/orders/${orderId}`);
@@ -145,14 +147,15 @@ function TerminalScreen({ orderId, total, onClose }) {
     },
     refetchInterval: 4000,
     enabled: !!orderId,
-    onSuccess: (order) => {
-      if (order?.paymentStatus === "APROVADO") {
-        toast.success("Pagamento confirmado! 🍕");
-        queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
-        onClose();
-      }
-    },
   });
+
+  useEffect(() => {
+    if (polledTerminalOrder?.paymentStatus === "APROVADO") {
+      toast.success("Pagamento confirmado! 🍕");
+      queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
+      onClose();
+    }
+  }, [polledTerminalOrder, queryClient, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
