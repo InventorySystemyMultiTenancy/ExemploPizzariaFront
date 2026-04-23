@@ -104,6 +104,12 @@ export default function RealtimeBridge() {
         return;
       }
 
+      if (user.role === "MESA") {
+        // Atualiza imediatamente quando um pedido é criado nesta mesa
+        queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
+        return;
+      }
+
       if (STAFF_ROLES.has(user.role)) {
         queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
         invalidateAdminQueries(queryClient);
@@ -147,6 +153,11 @@ export default function RealtimeBridge() {
     const onPaymentUpdated = (payload) => {
       if (user.role === "CLIENTE") {
         queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+        return;
+      }
+
+      if (user.role === "MESA") {
+        queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
         return;
       }
 

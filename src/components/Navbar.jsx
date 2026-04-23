@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
@@ -30,6 +31,37 @@ function WhatsAppIcon() {
 export default function Navbar({ activeLink }) {
   const { openCart, items } = useCart();
   const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState(false);
+  const longPressTimer = useRef(null);
+
+  const LOGOUT_PIN = import.meta.env.VITE_MESA_LOGOUT_PIN || "2468";
+
+  const handleLogoMouseDown = () => {
+    if (user?.role !== "MESA") return;
+    longPressTimer.current = setTimeout(() => {
+      setShowPinModal(true);
+      setPin("");
+      setPinError(false);
+    }, 3000);
+  };
+
+  const handleLogoMouseUp = () => {
+    clearTimeout(longPressTimer.current);
+  };
+
+  const handlePinSubmit = () => {
+    if (pin === LOGOUT_PIN) {
+      setShowPinModal(false);
+      logout();
+      navigate("/");
+    } else {
+      setPinError(true);
+      setPin("");
+    }
+  };
 
   const { data: mesaOrders = [] } = useQuery({
     queryKey: ["mesa-orders"],
@@ -38,7 +70,7 @@ export default function Navbar({ activeLink }) {
       return res.data?.data ?? [];
     },
     enabled: user?.role === "MESA",
-    refetchInterval: 15000,
+    refetchInterval: 3 * 60 * 1000, // 3 minutos
   });
 
   const hasPendingPayment =
@@ -57,93 +89,149 @@ export default function Navbar({ activeLink }) {
           : "/dashboard";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
-        {/* Logo */}
-        <Link to="/">
-          <img
-            src="/logo-fellice.png"
-            alt="Pizzaria Fellice"
-            className="h-10 w-auto"
-          />
-        </Link>
-
-        {/* Links */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* WhatsApp */}
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100"
-            title="Falar no WhatsApp"
-          >
-            <WhatsAppIcon />
-            <span className="hidden sm:inline">WhatsApp</span>
-          </a>
-
+    <>
+      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
+          {/* Logo — segure 3s para sair (só MESA) */}
           <Link
-            to="/cardapio"
-            className={`text-sm font-semibold transition-colors hover:text-rosso ${
-              activeLink === "cardapio"
-                ? "text-rosso underline underline-offset-4"
-                : "text-gray-700"
-            }`}
+            to="/"
+            onMouseDown={handleLogoMouseDown}
+            onMouseUp={handleLogoMouseUp}
+            onMouseLeave={handleLogoMouseUp}
+            onTouchStart={handleLogoMouseDown}
+            onTouchEnd={handleLogoMouseUp}
+            draggable={false}
           >
-            Cardápio
+            <img
+              src="/logo-fellice.png"
+              alt="Pizzaria Fellice"
+              className="h-10 w-auto select-none"
+            />
           </Link>
 
-          {isAuthenticated && user?.role !== "MESA" ? (
-            <>
+          {/* Links */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* WhatsApp */}
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100"
+              title="Falar no WhatsApp"
+            >
+              <WhatsAppIcon />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
+
+            <Link
+              to="/cardapio"
+              className={`text-sm font-semibold transition-colors hover:text-rosso ${
+                activeLink === "cardapio"
+                  ? "text-rosso underline underline-offset-4"
+                  : "text-gray-700"
+              }`}
+            >
+              Cardápio
+            </Link>
+
+            {isAuthenticated && user?.role !== "MESA" ? (
+              <>
+                <Link
+                  className="text-sm text-gray-500 transition-colors hover:text-rosso"
+                  to={painelTo}
+                >
+                  Painel
+                </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-sm text-gray-400 transition-colors hover:text-rosso"
+                >
+                  Sair
+                </button>
+              </>
+            ) : !isAuthenticated ? (
               <Link
-                className="text-sm text-gray-500 transition-colors hover:text-rosso"
-                to={painelTo}
+                className="text-sm text-gray-600 transition-colors hover:text-rosso"
+                to="/login"
               >
-                Painel
+                Entrar
               </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="text-sm text-gray-400 transition-colors hover:text-rosso"
+            ) : null}
+
+            {/* Pagamento pendente (só MESA) */}
+            {hasPendingPayment && (
+              <Link
+                to="/mesa/checkout"
+                className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 animate-pulse"
               >
-                Sair
-              </button>
-            </>
-          ) : !isAuthenticated ? (
-            <Link
-              className="text-sm text-gray-600 transition-colors hover:text-rosso"
-              to="/login"
-            >
-              Entrar
-            </Link>
-          ) : null}
-
-          {/* Pagamento pendente (só MESA) */}
-          {hasPendingPayment && (
-            <Link
-              to="/mesa/checkout"
-              className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 animate-pulse"
-            >
-              💳 Pagar
-            </Link>
-          )}
-
-          {/* Cart */}
-          <button
-            type="button"
-            onClick={openCart}
-            className="relative flex items-center gap-2 rounded-xl bg-rosso px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-ember"
-          >
-            <span>🛒</span>
-            <span className="hidden sm:inline">Carrinho</span>
-            {items.length > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-black text-black">
-                {items.length}
-              </span>
+                💳 Pagar
+              </Link>
             )}
-          </button>
+
+            {/* Cart */}
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative flex items-center gap-2 rounded-xl bg-rosso px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-ember"
+            >
+              <span>🛒</span>
+              <span className="hidden sm:inline">Carrinho</span>
+              {items.length > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-black text-black">
+                  {items.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Modal de PIN para sair da sessão MESA */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center">
+            <p className="text-3xl mb-2">🔒</p>
+            <h2 className="font-bold text-gray-900 mb-1">Encerrar sessão</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Digite o PIN de funcionário para sair
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={8}
+              value={pin}
+              onChange={(e) => {
+                setPin(e.target.value);
+                setPinError(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handlePinSubmit()}
+              autoFocus
+              className={`w-full rounded-xl border px-4 py-3 text-center text-lg tracking-widest outline-none mb-3 ${
+                pinError ? "border-red-400 bg-red-50" : "border-gray-200"
+              }`}
+              placeholder="••••"
+            />
+            {pinError && (
+              <p className="text-xs text-red-500 mb-2">
+                PIN incorreto. Tente novamente.
+              </p>
+            )}
+            <button
+              onClick={handlePinSubmit}
+              className="w-full rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
+            >
+              Confirmar
+            </button>
+            <button
+              onClick={() => setShowPinModal(false)}
+              className="w-full rounded-xl border border-gray-200 py-2.5 text-sm text-gray-500 hover:border-gray-400"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
