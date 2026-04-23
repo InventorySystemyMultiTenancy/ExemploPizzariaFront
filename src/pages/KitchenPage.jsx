@@ -58,6 +58,12 @@ const COLUMNS = [
     virtual: true,
     color: "border-purple-500/40 bg-purple-500/10",
   },
+  {
+    key: "LEVAR_PARA_MESA",
+    label: "Levar para a Mesa",
+    virtual: true,
+    color: "border-amber-600/40 bg-amber-600/10",
+  },
 ];
 
 // Real order statuses (for drag/advance logic)
@@ -113,6 +119,7 @@ function OrderCard({
   const needsCodeConfirm =
     order.status === "SAIU_PARA_ENTREGA" &&
     !order.isPickup &&
+    !order.mesaId &&
     !!onConfirmDelivery;
   const hasNext = !!stage?.next && !onConfirmPayment && !needsCodeConfirm;
   const eta = getOrderEta(order, now);
@@ -120,11 +127,15 @@ function OrderCard({
 
   const advanceLabel = advancing
     ? "Atualizando..."
-    : order.isPickup && order.status === "NO_FORNO"
-      ? "Pronto p/ Retirada"
-      : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
-        ? "Marcar Retirado"
-        : NEXT_LABEL[order.status];
+    : order.mesaId && order.status === "NO_FORNO"
+      ? "Levar para a Mesa"
+      : order.mesaId && order.status === "SAIU_PARA_ENTREGA"
+        ? "Entregue na Mesa"
+        : order.isPickup && order.status === "NO_FORNO"
+          ? "Pronto p/ Retirada"
+          : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
+            ? "Marcar Retirado"
+            : NEXT_LABEL[order.status];
 
   return (
     <article
@@ -286,50 +297,53 @@ function OrderCard({
         </div>
       )}
 
-      {/* Motoboy assignment — delivery orders only */}
-      {!order.isPickup && onAssignMotoboy && motoboys.length > 0 && (
-        <div className="mt-3 border-t border-gray-200 pt-3">
-          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
-            🛵 Motoboy
-          </p>
-          {order.assignedMotoboyId ? (
-            <div className="flex items-center gap-2">
-              <span className="flex-1 truncate rounded-xl bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                {motoboys.find((m) => m.id === order.assignedMotoboyId)?.name ??
-                  "Motoboy"}
-              </span>
+      {/* Motoboy assignment — delivery orders only (not mesa) */}
+      {!order.isPickup &&
+        !order.mesaId &&
+        onAssignMotoboy &&
+        motoboys.length > 0 && (
+          <div className="mt-3 border-t border-gray-200 pt-3">
+            <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
+              🛵 Motoboy
+            </p>
+            {order.assignedMotoboyId ? (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 truncate rounded-xl bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                  {motoboys.find((m) => m.id === order.assignedMotoboyId)
+                    ?.name ?? "Motoboy"}
+                </span>
+                <select
+                  value={order.assignedMotoboyId}
+                  onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
+                  disabled={assigningMotoboy}
+                  className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-xs"
+                >
+                  {motoboys.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
               <select
-                value={order.assignedMotoboyId}
-                onChange={(e) => onAssignMotoboy(order.id, e.target.value)}
+                value=""
+                onChange={(e) =>
+                  e.target.value && onAssignMotoboy(order.id, e.target.value)
+                }
                 disabled={assigningMotoboy}
-                className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-xs"
+                className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
               >
+                <option value="">Selecionar motoboy...</option>
                 {motoboys.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
                 ))}
               </select>
-            </div>
-          ) : (
-            <select
-              value=""
-              onChange={(e) =>
-                e.target.value && onAssignMotoboy(order.id, e.target.value)
-              }
-              disabled={assigningMotoboy}
-              className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
-            >
-              <option value="">Selecionar motoboy...</option>
-              {motoboys.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
       {/* Cancel button — shown in all columns including payment pending */}
       {onCancel &&
@@ -637,23 +651,36 @@ function KitchenPage() {
   );
   const getColumnOrders = (columnKey) => {
     if (columnKey === "AGUARDANDO_PAGAMENTO") {
+      // Mesa orders never ficam aqui — vão direto pro status real
       return visibleOrders.filter(
-        (o) => o.status === "RECEBIDO" && o.paymentStatus === "PENDENTE",
+        (o) =>
+          o.status === "RECEBIDO" &&
+          o.paymentStatus === "PENDENTE" &&
+          !o.mesaId,
       );
     }
     if (columnKey === "RECEBIDO") {
+      // Mesa orders aparecem aqui mesmo com pagamento pendente
       return visibleOrders.filter(
-        (o) => o.status === "RECEBIDO" && o.paymentStatus !== "PENDENTE",
+        (o) =>
+          o.status === "RECEBIDO" &&
+          (o.paymentStatus !== "PENDENTE" || !!o.mesaId),
       );
     }
     if (columnKey === "SAIU_PARA_ENTREGA") {
+      // Só entregas normais (não mesa, não retirada)
       return visibleOrders.filter(
-        (o) => o.status === "SAIU_PARA_ENTREGA" && !o.isPickup,
+        (o) => o.status === "SAIU_PARA_ENTREGA" && !o.isPickup && !o.mesaId,
       );
     }
     if (columnKey === "RETIRADA_PRONTA") {
       return visibleOrders.filter(
         (o) => o.status === "SAIU_PARA_ENTREGA" && o.isPickup,
+      );
+    }
+    if (columnKey === "LEVAR_PARA_MESA") {
+      return visibleOrders.filter(
+        (o) => o.status === "SAIU_PARA_ENTREGA" && !!o.mesaId,
       );
     }
     return visibleOrders.filter((o) => o.status === columnKey);
@@ -839,7 +866,7 @@ function KitchenPage() {
 
       {/* Kanban columns */}
       {!isLoading && !isError && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
           {COLUMNS.map((col) => {
             const isVirtual = col.virtual;
             const stageOrders = getColumnOrders(col.key).sort((a, b) =>
@@ -936,7 +963,7 @@ function KitchenPage() {
                         cancelling={isCancelling && cancelVars === order.id}
                         motoboys={motoboys}
                         onAssignMotoboy={
-                          !order.isPickup
+                          !order.isPickup && !order.mesaId
                             ? (orderId, motoboyId) =>
                                 assignMotoboy({ orderId, motoboyId })
                             : undefined
@@ -945,7 +972,7 @@ function KitchenPage() {
                           isAssigning && assignVars?.orderId === order.id
                         }
                         onConfirmDelivery={
-                          !order.isPickup
+                          !order.isPickup && !order.mesaId
                             ? (orderId, code) =>
                                 confirmDelivery({ orderId, code })
                             : undefined
