@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import { api } from "../lib/api.js";
 
 function CheckoutReturnPage() {
   const [searchParams] = useSearchParams();
@@ -8,15 +9,29 @@ function CheckoutReturnPage() {
 
   const status = searchParams.get("status"); // approved | failure | pending | null
   const orderId = searchParams.get("external_reference");
+  const paymentId = searchParams.get("payment_id");
 
   const isApproved = status === "approved";
   const isPending = status === "pending" || status === "in_process";
 
+  const [confirmed, setConfirmed] = useState(isApproved);
+
   useEffect(() => {
     if (isApproved) {
       clearCart();
+
+      // Confirma explicitamente no backend para cobrir casos onde o webhook
+      // chegou com external_reference nulo (bug do Mercado Pago)
+      if (orderId && paymentId) {
+        api
+          .post("/payments/checkout-confirm", { orderId, paymentId })
+          .then(() => setConfirmed(true))
+          .catch((err) =>
+            console.warn("[checkout-confirm] Erro ao confirmar:", err),
+          );
+      }
     }
-  }, [isApproved, clearCart]);
+  }, [isApproved, clearCart, orderId, paymentId]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-4 text-gray-900">
