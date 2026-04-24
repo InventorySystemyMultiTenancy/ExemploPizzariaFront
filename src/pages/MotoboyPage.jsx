@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { api } from "../lib/api.js";
 
 const currency = (v) =>
@@ -14,6 +16,8 @@ const itemLabel = (item) => {
 };
 
 function MotoboyPage() {
+  const [deliveryCodes, setDeliveryCodes] = useState({});
+  const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["motoboy-orders"],
     queryFn: async () => {
@@ -22,6 +26,26 @@ function MotoboyPage() {
     },
     refetchInterval: 20_000,
   });
+
+  const handleConfirmDelivery = async (orderId) => {
+    const code = deliveryCodes[orderId] ?? "";
+
+    setConfirmingByOrderId((prev) => ({ ...prev, [orderId]: true }));
+
+    try {
+      await api.post(`/orders/${orderId}/confirm-delivery`, { code });
+      setDeliveryCodes((prev) => ({ ...prev, [orderId]: "" }));
+      toast.success("Entrega confirmada com sucesso.");
+      refetch();
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ??
+        "Não foi possível confirmar a entrega.";
+      toast.error(message);
+    } finally {
+      setConfirmingByOrderId((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
 
   const orders = data ?? [];
 
@@ -112,6 +136,19 @@ function MotoboyPage() {
               </span>
             </div>
 
+            {/* Payment hint for delivery */}
+            <div className="mt-3 flex justify-end">
+              {order.paymentStatus === "APROVADO" ? (
+                <span className="rounded-xl bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Já pago
+                </span>
+              ) : (
+                <span className="rounded-xl bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                  Cobrar cliente na entrega
+                </span>
+              )}
+            </div>
+
             {/* Navigation buttons */}
             {order.deliveryLat != null && order.deliveryLon != null ? (
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -158,6 +195,45 @@ function MotoboyPage() {
                 </a>
               </div>
             )}
+
+            {/* Delivery confirmation */}
+            <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
+              <p className="text-xs font-semibold text-gray-600">
+                Confirmar entrega com código
+              </p>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={deliveryCodes[order.id] ?? ""}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 4);
+                    setDeliveryCodes((prev) => ({
+                      ...prev,
+                      [order.id]: digitsOnly,
+                    }));
+                  }}
+                  placeholder="Ex.: 1234"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
+                />
+                <button
+                  type="button"
+                  disabled={
+                    confirmingByOrderId[order.id] ||
+                    (deliveryCodes[order.id] ?? "").length !== 4
+                  }
+                  onClick={() => handleConfirmDelivery(order.id)}
+                  className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {confirmingByOrderId[order.id]
+                    ? "Confirmando..."
+                    : "Confirmar"}
+                </button>
+              </div>
+            </div>
           </article>
         ))}
       </div>
