@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import CartDrawer from "../components/CartDrawer.jsx";
 import Navbar from "../components/Navbar.jsx";
-import PizzaSelector from "../components/PizzaSelector.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
@@ -20,35 +20,95 @@ const fmt = (value) =>
   });
 
 /* ─── Size Picker Modal ─────────────────────────────────────── */
-function SizePickerModal({ product, onClose }) {
+function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
   const { addItem, openCart } = useCart();
   const prices = (product.sizes ?? []).filter(
     (s) => s.size === "PEQUENA" || s.size === "GRANDE",
   );
+  const pendingMode = Boolean(pendingHalf);
   const [selectedSize, setSelectedSize] = useState(
-    prices.find((s) => s.size === "GRANDE")?.size ??
+    pendingHalf?.size ??
+      prices.find((s) => s.size === "GRANDE")?.size ??
       prices[0]?.size ??
       "GRANDE",
   );
+  const [selectionType, setSelectionType] = useState(
+    pendingMode ? "METADE" : "INTEIRA",
+  );
+
+  useEffect(() => {
+    if (!pendingHalf) return;
+    setSelectedSize(pendingHalf.size);
+    setSelectionType("METADE");
+  }, [pendingHalf]);
 
   const selectedEntry = prices.find((s) => s.size === selectedSize);
+  const selectedPrice = Number(selectedEntry?.price ?? 0);
+
+  const selectedMode = pendingMode ? "METADE" : selectionType;
 
   const handleAdd = () => {
     if (!selectedEntry) return;
+
+    if (selectedMode === "INTEIRA") {
+      addItem({
+        key: `${product.id}-${selectedSize}`,
+        title: product.name,
+        description: `${SIZE_MAP[selectedSize] ?? selectedSize}`,
+        basePrice: Number(selectedEntry.price),
+        price: Number(selectedEntry.price),
+        quantity: 1,
+        payload: {
+          type: "INTEIRA",
+          size: selectedSize,
+          crustProductId: undefined,
+          flavors: [product.id],
+        },
+      });
+      openCart();
+      onClose();
+      return;
+    }
+
+    if (!pendingHalf) {
+      onSetPendingHalf({
+        productId: product.id,
+        productName: product.name,
+        size: selectedSize,
+        price: selectedPrice,
+      });
+      toast.success("Primeira metade salva. Escolha o próximo sabor.");
+      onClose();
+      return;
+    }
+
+    if (pendingHalf.productId === product.id) {
+      toast.error("Escolha um sabor diferente para completar a outra metade.");
+      return;
+    }
+
+    const flavorIds = [pendingHalf.productId, product.id];
+    const flavorNames = [pendingHalf.productName, product.name];
+    const flavorKey = [...flavorIds].sort().join("-");
+    const finalPrice = Math.max(pendingHalf.price, selectedPrice);
+
     addItem({
-      key: `${product.id}-${selectedSize}`,
-      title: product.name,
-      description: `${SIZE_MAP[selectedSize] ?? selectedSize}`,
-      basePrice: Number(selectedEntry.price),
-      price: Number(selectedEntry.price),
+      key: `MEIO_A_MEIO-${pendingHalf.size}-${flavorKey}`,
+      title: "Pizza Meio a Meio",
+      description: `${flavorNames.join(" / ")} | ${SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}`,
+      basePrice: finalPrice,
+      price: finalPrice,
       quantity: 1,
       payload: {
-        type: "INTEIRA",
-        size: selectedSize,
+        type: "MEIO_A_MEIO",
+        size: pendingHalf.size,
         crustProductId: undefined,
-        flavors: [product.id],
+        flavors: flavorIds,
       },
     });
+
+    onSetPendingHalf(null);
+    toast.success("Pizza meio a meio adicionada ao carrinho.");
     openCart();
     onClose();
   };
@@ -85,17 +145,47 @@ function SizePickerModal({ product, onClose }) {
           </div>
         </div>
 
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          {[
+            { id: "INTEIRA", label: "Inteira" },
+            { id: "METADE", label: "Metade" },
+          ].map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setSelectionType(option.id)}
+              disabled={pendingMode}
+              className={`rounded-2xl border py-2.5 text-sm font-semibold transition-all ${
+                selectedMode === option.id
+                  ? "border-rosso bg-rosso text-white shadow"
+                  : "border-gray-200 text-gray-600 hover:border-rosso/40"
+              } ${pendingMode ? "cursor-not-allowed opacity-60" : ""}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {pendingMode && (
+          <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Primeira metade: <strong>{pendingHalf.productName}</strong> (
+            {SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}). Esta seleção
+            completará a outra metade.
+          </div>
+        )}
+
         <div className="flex gap-2">
           {prices.map((s) => (
             <button
               key={s.size}
               type="button"
               onClick={() => setSelectedSize(s.size)}
+              disabled={pendingMode && s.size !== pendingHalf?.size}
               className={`flex-1 rounded-2xl border py-3.5 text-sm font-semibold transition-all ${
                 selectedSize === s.size
                   ? "border-rosso bg-rosso text-white shadow-md"
                   : "border-gray-200 text-gray-700 hover:border-rosso/40"
-              }`}
+              } ${pendingMode && s.size !== pendingHalf?.size ? "cursor-not-allowed opacity-40" : ""}`}
             >
               <span className="block">{SIZE_MAP[s.size] ?? s.size}</span>
               <span
@@ -113,7 +203,11 @@ function SizePickerModal({ product, onClose }) {
           disabled={!selectedEntry}
           className="mt-4 w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-40"
         >
-          Adicionar ao Carrinho
+          {selectedMode === "METADE" && !pendingHalf
+            ? "Salvar primeira metade"
+            : selectedMode === "METADE"
+              ? "Completar meio a meio"
+              : "Adicionar ao Carrinho"}
         </button>
 
         <button
@@ -129,7 +223,7 @@ function SizePickerModal({ product, onClose }) {
 }
 
 /* ─── Product Card ──────────────────────────────────────────── */
-function MenuCard({ product }) {
+function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
   const [showModal, setShowModal] = useState(false);
   const brotPrice = product.sizes?.find((s) => s.size === "PEQUENA");
   const grandePrice = product.sizes?.find((s) => s.size === "GRANDE");
@@ -204,6 +298,8 @@ function MenuCard({ product }) {
       {showModal && (
         <SizePickerModal
           product={product}
+          pendingHalf={pendingHalf}
+          onSetPendingHalf={onSetPendingHalf}
           onClose={() => setShowModal(false)}
         />
       )}
@@ -213,8 +309,8 @@ function MenuCard({ product }) {
 
 function CardapioPage() {
   const [activeCategory, setActiveCategory] = useState("Todos");
-  const [orderMode, setOrderMode] = useState("INTEIRA");
   const [search, setSearch] = useState("");
+  const [pendingHalf, setPendingHalf] = useState(null);
   const { user } = useAuth();
 
   const { data: mesaOrders = [] } = useQuery({
@@ -322,74 +418,68 @@ function CardapioPage() {
       </div>
 
       <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-8">
-        <div className="grid grid-cols-2 gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-2">
-          {[
-            { id: "INTEIRA", label: "Pizza Inteira" },
-            { id: "MEIO_A_MEIO", label: "Meio a Meio" },
-          ].map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setOrderMode(option.id)}
-              className={`rounded-2xl py-3 text-sm font-semibold transition-all ${
-                orderMode === option.id
-                  ? "bg-rosso text-white shadow"
-                  : "text-gray-600 hover:bg-white hover:text-gray-900"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="mt-1">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+            Buscar no cardapio
+          </label>
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Ex: calabresa, frango, doce..."
+            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-rosso/40"
+          />
         </div>
 
-        {orderMode === "INTEIRA" ? (
-          <div className="mt-4">
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
-              Buscar no cardapio
-            </label>
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Ex: calabresa, frango, doce..."
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-rosso/40"
-            />
+        {pendingHalf && (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm text-amber-900">
+              Primeira metade selecionada:{" "}
+              <strong>{pendingHalf.productName}</strong> (
+              {SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}). Escolha a
+              próxima pizza para completar.
+            </p>
+            <button
+              type="button"
+              onClick={() => setPendingHalf(null)}
+              className="shrink-0 rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+            >
+              Cancelar metade
+            </button>
           </div>
-        ) : null}
+        )}
       </section>
 
       {/* Product grid */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        {!isLoading && !isError && orderMode === "MEIO_A_MEIO" && (
-          <PizzaSelector />
-        )}
-
-        {!isLoading &&
-          !isError &&
-          orderMode === "INTEIRA" &&
-          topProducts.length > 0 && (
-            <div className="mb-8">
-              <div className="mb-4 flex items-end justify-between gap-3">
-                <div>
-                  <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
-                    Favoritas da casa
-                  </p>
-                  <h2 className="mt-1 font-display text-2xl text-gray-900">
-                    Mais Pedidas
-                  </h2>
-                </div>
-                <p className="text-xs text-gray-400">
-                  Os sabores que mais saem no momento
+        {!isLoading && !isError && topProducts.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
+                  Favoritas da casa
                 </p>
+                <h2 className="mt-1 font-display text-2xl text-gray-900">
+                  Mais Pedidas
+                </h2>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {topProducts.map((product) => (
-                  <MenuCard key={`top-${product.id}`} product={product} />
-                ))}
-              </div>
+              <p className="text-xs text-gray-400">
+                Os sabores que mais saem no momento
+              </p>
             </div>
-          )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {topProducts.map((product) => (
+                <MenuCard
+                  key={`top-${product.id}`}
+                  product={product}
+                  pendingHalf={pendingHalf}
+                  onSetPendingHalf={setPendingHalf}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {isLoading && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -417,23 +507,24 @@ function CardapioPage() {
         {!isLoading &&
           !isError &&
           filtered.length > 0 &&
-          searched.length === 0 &&
-          orderMode === "INTEIRA" && (
+          searched.length === 0 && (
             <p className="py-16 text-center text-gray-400">
               Nenhum item encontrado para "{search}".
             </p>
           )}
 
-        {!isLoading &&
-          !isError &&
-          orderMode === "INTEIRA" &&
-          searched.length > 0 && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {searched.map((product) => (
-                <MenuCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
+        {!isLoading && !isError && searched.length > 0 && (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {searched.map((product) => (
+              <MenuCard
+                key={product.id}
+                product={product}
+                pendingHalf={pendingHalf}
+                onSetPendingHalf={setPendingHalf}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
