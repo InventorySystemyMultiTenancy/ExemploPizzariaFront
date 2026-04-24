@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
 
 const currency = (v) =>
@@ -46,6 +47,7 @@ const getWazeUrl = (order) => {
 function MotoboyPage() {
   const [deliveryCodes, setDeliveryCodes] = useState({});
   const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
+  const [markingPaidByOrderId, setMarkingPaidByOrderId] = useState({});
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["motoboy-orders"],
     queryFn: async () => {
@@ -72,6 +74,37 @@ function MotoboyPage() {
       toast.error(message);
     } finally {
       setConfirmingByOrderId((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  const handleMarkAsPaid = async (orderId) => {
+    const confirmResult = await Swal.fire({
+      title: "Confirmar pagamento?",
+      text: "Marque como pago somente após receber o valor do cliente.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sim, marcar como pago",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#0f172a",
+    });
+
+    if (!confirmResult.isConfirmed) {
+      return;
+    }
+
+    setMarkingPaidByOrderId((prev) => ({ ...prev, [orderId]: true }));
+
+    try {
+      await api.patch(`/orders/${orderId}/mark-paid`);
+      toast.success("Pagamento marcado como aprovado.");
+      refetch();
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ??
+        "Não foi possível confirmar o pagamento.";
+      toast.error(message);
+    } finally {
+      setMarkingPaidByOrderId((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -171,9 +204,21 @@ function MotoboyPage() {
                   Já pago
                 </span>
               ) : (
-                <span className="rounded-xl bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                  Cobrar cliente na entrega
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-xl bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                    Cobrar cliente na entrega
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleMarkAsPaid(order.id)}
+                    disabled={markingPaidByOrderId[order.id]}
+                    className="rounded-xl bg-emerald-700 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {markingPaidByOrderId[order.id]
+                      ? "Salvando..."
+                      : "Marcar como pago"}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -225,43 +270,51 @@ function MotoboyPage() {
             )}
 
             {/* Delivery confirmation */}
-            <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
-              <p className="text-xs font-semibold text-gray-600">
-                Confirmar entrega com código
-              </p>
-              <div className="mt-2 flex gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={deliveryCodes[order.id] ?? ""}
-                  onChange={(event) => {
-                    const digitsOnly = event.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 4);
-                    setDeliveryCodes((prev) => ({
-                      ...prev,
-                      [order.id]: digitsOnly,
-                    }));
-                  }}
-                  placeholder="Ex.: 1234"
-                  className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
-                />
-                <button
-                  type="button"
-                  disabled={
-                    confirmingByOrderId[order.id] ||
-                    (deliveryCodes[order.id] ?? "").length !== 4
-                  }
-                  onClick={() => handleConfirmDelivery(order.id)}
-                  className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {confirmingByOrderId[order.id]
-                    ? "Confirmando..."
-                    : "Confirmar"}
-                </button>
+            {order.paymentStatus === "APROVADO" ? (
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
+                <p className="text-xs font-semibold text-gray-600">
+                  Confirmar entrega com código
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={deliveryCodes[order.id] ?? ""}
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 4);
+                      setDeliveryCodes((prev) => ({
+                        ...prev,
+                        [order.id]: digitsOnly,
+                      }));
+                    }}
+                    placeholder="Ex.: 1234"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
+                  />
+                  <button
+                    type="button"
+                    disabled={
+                      confirmingByOrderId[order.id] ||
+                      (deliveryCodes[order.id] ?? "").length !== 4
+                    }
+                    onClick={() => handleConfirmDelivery(order.id)}
+                    className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {confirmingByOrderId[order.id]
+                      ? "Confirmando..."
+                      : "Confirmar"}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-xs font-medium text-amber-700">
+                  Para confirmar a entrega, marque o pedido como pago primeiro.
+                </p>
+              </div>
+            )}
           </article>
         ))}
       </div>
