@@ -127,6 +127,7 @@ function PixScreen({ orderId, total, onClose }) {
 // ── Tela de maquininha ────────────────────────────────────────────────────────
 function TerminalScreen({ orderId, total, onClose }) {
   const queryClient = useQueryClient();
+  const [approved, setApproved] = useState(false);
 
   const terminalMutation = useMutation({
     mutationFn: () => api.post("/mesa/payments/terminal", { orderId }),
@@ -145,17 +146,18 @@ function TerminalScreen({ orderId, total, onClose }) {
       const res = await api.get(`/orders/${orderId}`);
       return res.data?.data;
     },
-    refetchInterval: 4000,
-    enabled: !!orderId,
+    refetchInterval: approved ? false : 4000,
+    enabled: !!orderId && !approved,
   });
 
   useEffect(() => {
-    if (polledTerminalOrder?.paymentStatus === "APROVADO") {
+    if (polledTerminalOrder?.paymentStatus === "APROVADO" && !approved) {
+      setApproved(true);
       toast.success("Pagamento confirmado! 🍕");
       queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
       onClose();
     }
-  }, [polledTerminalOrder, queryClient, onClose]);
+  }, [polledTerminalOrder, approved, queryClient, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
