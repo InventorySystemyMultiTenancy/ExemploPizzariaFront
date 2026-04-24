@@ -218,6 +218,11 @@ function OrderCard({
             <span className="ml-2 text-xs text-gray-600">
               {item.size} &times; {item.quantity}
             </span>
+            {item.notes && (
+              <p className="mt-0.5 rounded-lg bg-yellow-50 px-2 py-0.5 text-xs text-yellow-800">
+                ⚠ {item.notes}
+              </p>
+            )}
           </li>
         ))}
       </ul>

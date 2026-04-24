@@ -145,6 +145,23 @@ function CartDrawer() {
                   </div>
                 ) : null}
 
+                <div className="mt-3">
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-smoke">
+                    Observação
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Ex: sem cebola, sem azeitona..."
+                    value={item.notes ?? ""}
+                    onChange={(e) =>
+                      updateItem(item.key, {
+                        notes: e.target.value || undefined,
+                      })
+                    }
+                    className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-gold/40"
+                  />
+                </div>
+
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button

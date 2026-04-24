@@ -26,6 +26,7 @@ const mapItemToApi = (item) => {
       size: payload.size,
       crustProductId: payload.crustProductId,
       quantity: item.quantity,
+      notes: item.notes || undefined,
     };
   }
   return {
@@ -34,6 +35,7 @@ const mapItemToApi = (item) => {
     size: payload.size,
     crustProductId: payload.crustProductId,
     quantity: item.quantity,
+    notes: item.notes || undefined,
   };
 };
 
