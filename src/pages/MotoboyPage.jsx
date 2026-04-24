@@ -15,6 +15,34 @@ const itemLabel = (item) => {
   return `${item.size} — ${item.product?.name ?? "—"}`;
 };
 
+const getGoogleMapsUrl = (order) => {
+  const hasAddress = Boolean(order.deliveryAddress);
+
+  if (hasAddress) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.deliveryAddress)}`;
+  }
+
+  if (order.deliveryLat != null && order.deliveryLon != null) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${order.deliveryLat},${order.deliveryLon}`;
+  }
+
+  return "https://www.google.com/maps";
+};
+
+const getWazeUrl = (order) => {
+  const hasAddress = Boolean(order.deliveryAddress);
+
+  if (hasAddress) {
+    return `https://waze.com/ul?q=${encodeURIComponent(order.deliveryAddress)}&navigate=yes`;
+  }
+
+  if (order.deliveryLat != null && order.deliveryLon != null) {
+    return `https://waze.com/ul?ll=${order.deliveryLat},${order.deliveryLon}&navigate=yes`;
+  }
+
+  return "https://waze.com/ul";
+};
+
 function MotoboyPage() {
   const [deliveryCodes, setDeliveryCodes] = useState({});
   const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
@@ -153,7 +181,7 @@ function MotoboyPage() {
             {order.deliveryLat != null && order.deliveryLon != null ? (
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${order.deliveryLat},${order.deliveryLon}`}
+                  href={getGoogleMapsUrl(order)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
@@ -168,7 +196,7 @@ function MotoboyPage() {
                   Google Maps
                 </a>
                 <a
-                  href={`https://waze.com/ul?ll=${order.deliveryLat},${order.deliveryLon}&navigate=yes`}
+                  href={getWazeUrl(order)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 py-3 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100"
