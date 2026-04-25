@@ -10,13 +10,22 @@ const SIZE_LABEL = {
   GRANDE: "Grande",
 };
 
+const PRODUCT_TYPE = {
+  PIZZA: "PIZZA",
+  CRUST: "CRUST",
+  OTHER: "OTHER",
+};
+
 const emptyForm = () => ({
   name: "",
   description: "",
   imageUrl: "",
   category: "",
   isCrust: false,
+  productType: PRODUCT_TYPE.PIZZA,
   sizes: SIZES.map((size) => ({ size, price: "", costPrice: "" })),
+  singlePrice: "",
+  singleCostPrice: "",
 });
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
@@ -25,12 +34,19 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 
   const [form, setForm] = useState(() => {
     if (!isEdit) return emptyForm();
+    const productType = product.isCrust
+      ? PRODUCT_TYPE.CRUST
+      : (product.sizes?.length ?? 0) <= 1
+        ? PRODUCT_TYPE.OTHER
+        : PRODUCT_TYPE.PIZZA;
+    const firstSize = product.sizes?.[0];
     return {
       name: product.name,
       description: product.description ?? "",
       imageUrl: product.imageUrl ?? "",
       category: product.category ?? "",
       isCrust: Boolean(product.isCrust),
+      productType,
       sizes: SIZES.map((size) => {
         const existing = product.sizes?.find((s) => s.size === size);
         return {
@@ -40,6 +56,14 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
             existing?.costPrice != null ? String(existing.costPrice) : "",
         };
       }),
+      singlePrice:
+        productType === PRODUCT_TYPE.OTHER && firstSize
+          ? String(firstSize.price)
+          : "",
+      singleCostPrice:
+        productType === PRODUCT_TYPE.OTHER && firstSize?.costPrice != null
+          ? String(firstSize.costPrice)
+          : "",
     };
   });
 
@@ -76,18 +100,35 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "Nome obrigatório";
-    const filledSizes = form.sizes.filter((s) => s.price !== "");
-    if (!filledSizes.length)
-      errs.sizes = "Informe o preço de ao menos um tamanho";
-    filledSizes.forEach(({ size, price, costPrice }) => {
-      if (isNaN(Number(price)) || Number(price) <= 0)
-        errs[`price_${size}`] = "Preço inválido";
+    if (form.productType === PRODUCT_TYPE.OTHER) {
       if (
-        costPrice !== "" &&
-        (isNaN(Number(costPrice)) || Number(costPrice) < 0)
-      )
-        errs[`cost_${size}`] = "Custo inválido";
-    });
+        form.singlePrice === "" ||
+        isNaN(Number(form.singlePrice)) ||
+        Number(form.singlePrice) <= 0
+      ) {
+        errs.singlePrice = "Preço inválido";
+      }
+      if (
+        form.singleCostPrice !== "" &&
+        (isNaN(Number(form.singleCostPrice)) ||
+          Number(form.singleCostPrice) < 0)
+      ) {
+        errs.singleCostPrice = "Custo inválido";
+      }
+    } else {
+      const filledSizes = form.sizes.filter((s) => s.price !== "");
+      if (!filledSizes.length)
+        errs.sizes = "Informe o preço de ao menos um tamanho";
+      filledSizes.forEach(({ size, price, costPrice }) => {
+        if (isNaN(Number(price)) || Number(price) <= 0)
+          errs[`price_${size}`] = "Preço inválido";
+        if (
+          costPrice !== "" &&
+          (isNaN(Number(costPrice)) || Number(costPrice) < 0)
+        )
+          errs[`cost_${size}`] = "Custo inválido";
+      });
+    }
     if (form.imageUrl && !/^https?:\/\/.+/.test(form.imageUrl))
       errs.imageUrl = "URL inválida (deve começar com http)";
     setErrors(errs);
@@ -102,14 +143,27 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       description: form.description.trim() || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
       category: form.category.trim() || undefined,
-      isCrust: form.isCrust,
-      sizes: form.sizes
-        .filter((s) => s.price !== "")
-        .map((s) => ({
-          size: s.size,
-          price: Number(s.price),
-          ...(s.costPrice !== "" ? { costPrice: Number(s.costPrice) } : {}),
-        })),
+      isCrust: form.productType === PRODUCT_TYPE.CRUST,
+      sizes:
+        form.productType === PRODUCT_TYPE.OTHER
+          ? [
+              {
+                size: "GRANDE",
+                price: Number(form.singlePrice),
+                ...(form.singleCostPrice !== ""
+                  ? { costPrice: Number(form.singleCostPrice) }
+                  : {}),
+              },
+            ]
+          : form.sizes
+              .filter((s) => s.price !== "")
+              .map((s) => ({
+                size: s.size,
+                price: Number(s.price),
+                ...(s.costPrice !== ""
+                  ? { costPrice: Number(s.costPrice) }
+                  : {}),
+              })),
     };
     mutation.mutate(payload);
   };
@@ -180,28 +234,45 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
             <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
               Tipo do produto
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setForm((p) => ({ ...p, isCrust: false }))}
+                onClick={() =>
+                  setForm((p) => ({ ...p, productType: PRODUCT_TYPE.PIZZA }))
+                }
                 className={`rounded-2xl border py-3 text-sm font-semibold transition ${
-                  !form.isCrust
+                  form.productType === PRODUCT_TYPE.PIZZA
                     ? "border-gold/40 bg-gold/10 text-gold"
                     : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
                 }`}
               >
-                Sabor / Pizza
+                Pizza
               </button>
               <button
                 type="button"
-                onClick={() => setForm((p) => ({ ...p, isCrust: true }))}
+                onClick={() =>
+                  setForm((p) => ({ ...p, productType: PRODUCT_TYPE.CRUST }))
+                }
                 className={`rounded-2xl border py-3 text-sm font-semibold transition ${
-                  form.isCrust
+                  form.productType === PRODUCT_TYPE.CRUST
                     ? "border-gold/40 bg-gold/10 text-gold"
                     : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
                 }`}
               >
                 Borda recheada
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((p) => ({ ...p, productType: PRODUCT_TYPE.OTHER }))
+                }
+                className={`rounded-2xl border py-3 text-sm font-semibold transition ${
+                  form.productType === PRODUCT_TYPE.OTHER
+                    ? "border-gold/40 bg-gold/10 text-gold"
+                    : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
+                }`}
+              >
+                Outros
               </button>
             </div>
           </div>
@@ -232,70 +303,128 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
             )}
           </div>
 
-          {/* Prices per size */}
+          {/* Prices */}
           <div>
             <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
-              Preços por Tamanho *
+              {form.productType === PRODUCT_TYPE.OTHER
+                ? "Preço e custo *"
+                : "Preços por Tamanho *"}
             </label>
-            <div className="space-y-3">
-              {form.sizes.map(({ size, price, costPrice }) => (
-                <div key={size}>
-                  <p className="mb-1 text-xs font-semibold text-smoke">
-                    {SIZE_LABEL[size]}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-0.5 block text-xs text-smoke">
-                        Preço de venda
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-smoke">R$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={price}
-                          onChange={(e) =>
-                            setPrice(size, "price", e.target.value)
-                          }
-                          className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
-                          placeholder="0,00"
-                        />
+            {form.productType === PRODUCT_TYPE.OTHER ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-0.5 block text-xs text-smoke">
+                    Preço de venda
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-smoke">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.singlePrice}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, singlePrice: e.target.value }))
+                      }
+                      className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  {errors.singlePrice && (
+                    <p className="mt-0.5 text-xs text-red-400">
+                      {errors.singlePrice}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-0.5 block text-xs text-smoke">
+                    Custo (opcional)
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-smoke">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.singleCostPrice}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          singleCostPrice: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  {errors.singleCostPrice && (
+                    <p className="mt-0.5 text-xs text-red-400">
+                      {errors.singleCostPrice}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {form.sizes.map(({ size, price, costPrice }) => (
+                  <div key={size}>
+                    <p className="mb-1 text-xs font-semibold text-smoke">
+                      {SIZE_LABEL[size]}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-0.5 block text-xs text-smoke">
+                          Preço de venda
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-smoke">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={price}
+                            onChange={(e) =>
+                              setPrice(size, "price", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                            placeholder="0,00"
+                          />
+                        </div>
+                        {errors[`price_${size}`] && (
+                          <p className="mt-0.5 text-xs text-red-400">
+                            {errors[`price_${size}`]}
+                          </p>
+                        )}
                       </div>
-                      {errors[`price_${size}`] && (
-                        <p className="mt-0.5 text-xs text-red-400">
-                          {errors[`price_${size}`]}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="mb-0.5 block text-xs text-smoke">
-                        Custo (opcional)
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-smoke">R$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={costPrice}
-                          onChange={(e) =>
-                            setPrice(size, "costPrice", e.target.value)
-                          }
-                          className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
-                          placeholder="0,00"
-                        />
+                      <div>
+                        <label className="mb-0.5 block text-xs text-smoke">
+                          Custo (opcional)
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-smoke">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={costPrice}
+                            onChange={(e) =>
+                              setPrice(size, "costPrice", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gold/50"
+                            placeholder="0,00"
+                          />
+                        </div>
+                        {errors[`cost_${size}`] && (
+                          <p className="mt-0.5 text-xs text-red-400">
+                            {errors[`cost_${size}`]}
+                          </p>
+                        )}
                       </div>
-                      {errors[`cost_${size}`] && (
-                        <p className="mt-0.5 text-xs text-red-400">
-                          {errors[`cost_${size}`]}
-                        </p>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {errors.sizes && (
               <p className="mt-1 text-xs text-red-400">{errors.sizes}</p>
             )}
@@ -325,6 +454,11 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 
 function ProductCard({ product, onEdit }) {
   const queryClient = useQueryClient();
+  const productTypeLabel = product.isCrust
+    ? "Borda recheada"
+    : (product.sizes?.length ?? 0) <= 1
+      ? "Outros"
+      : "Sabor";
 
   const toggleActive = useMutation({
     mutationFn: async () => {
@@ -388,7 +522,7 @@ function ProductCard({ product, onEdit }) {
 
       <div className="mt-2 flex flex-wrap gap-1">
         <span className="rounded-xl bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
-          {product.isCrust ? "Borda recheada" : "Sabor"}
+          {productTypeLabel}
         </span>
         {product.category ? (
           <span className="rounded-xl bg-gray-200 px-2 py-0.5 text-xs text-smoke">
