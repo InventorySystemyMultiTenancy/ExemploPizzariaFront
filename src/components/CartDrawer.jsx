@@ -325,7 +325,7 @@ function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md transform bg-white p-4 shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md transform flex-col bg-white p-4 shadow-2xl transition-transform duration-300 ease-in-out sm:p-6 ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -340,7 +340,7 @@ function CartDrawer() {
           </button>
         </div>
 
-        <div className="mt-5 space-y-3 overflow-y-auto pb-44">
+        <div className="mt-5 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-4 pr-1">
           <SuggestionBanner
             suggestion={activeSuggestion}
             adding={addingSuggestion}
@@ -445,7 +445,7 @@ function CartDrawer() {
           )}
         </div>
 
-        <footer className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 sm:p-6">
+        <footer className="mt-3 border-t border-gray-200 bg-white pt-4 sm:pt-6">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-smoke">
               <span>Subtotal</span>

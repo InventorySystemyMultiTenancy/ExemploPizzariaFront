@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import EstimatedTimeBadge from "../components/EstimatedTimeBadge.jsx";
 import toast from "react-hot-toast";
@@ -391,6 +392,7 @@ function OrderCard({
 }
 
 function KitchenPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [now, setNow] = useState(() => Date.now());
@@ -450,6 +452,14 @@ function KitchenPage() {
   const handleDragEnd = () => {
     setDraggedOrder(null);
     setActiveDropStage(null);
+  };
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/dashboard");
   };
 
   useEffect(() => subscribeToStaffUnreadCount(setUnreadCount), []);
@@ -770,7 +780,14 @@ function KitchenPage() {
             {desktopEnabled ? "notificacoes ativas" : "notificacoes inativas"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
+          >
+            Voltar
+          </button>
           <button
             type="button"
             onClick={() => clearStaffUnreadCount()}
