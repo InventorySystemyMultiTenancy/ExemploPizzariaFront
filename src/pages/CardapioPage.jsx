@@ -28,7 +28,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
     PEQUENA: t("SIZE_BROTO", "Broto"),
     GRANDE: t("SIZE_GRANDE", "Grande"),
   };
-  const prices = (product.sizes ?? []).filter();
+  const prices = (product.sizes ?? []).filter(Boolean);
   const pendingMode = Boolean(pendingHalf);
   const [selectedSize, setSelectedSize] = useState(
     pendingHalf?.size ??
