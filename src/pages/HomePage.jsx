@@ -65,9 +65,24 @@ function HomePage() {
         </div>
 
         <div className="space-y-5 text-base leading-8 text-gray-600">
-          <p>{t("HOME_ABOUT_P1")}</p>
-          <p>{t("HOME_ABOUT_P2")}</p>
-          <p>{t("HOME_ABOUT_P3")}</p>
+          <p>
+            {t(
+              "HOME_ABOUT_P1",
+              "Desde 1997, a Pizzaria Fellice é sinônimo de qualidade e sabor. Combinamos ingredientes frescos e selecionados com receitas exclusivas para criar pizzas que encantam a todos. Seja em nosso salão, que oferece um ambiente aconchegante para momentos especiais, ou através do nosso eficiente serviço de delivery, garantimos uma experiência gastronômica única.",
+            )}
+          </p>
+          <p>
+            {t(
+              "HOME_ABOUT_P2",
+              "Além das nossas pizzas, oferecemos uma deliciosa variedade de porções, beirutes, petiscos, batatas e sobremesas, tudo preparado com o mesmo cuidado e dedicação que nos tornaram referência na região.",
+            )}
+          </p>
+          <p>
+            {t(
+              "HOME_ABOUT_P3",
+              "Descubra por que a Pizzaria Fellice é a escolha certa para quem busca tradição, qualidade e um toque de exclusividade. Visite-nos ou faça seu pedido online e saboreie o melhor da gastronomia italiana com o nosso toque especial.",
+            )}
+          </p>
         </div>
 
         <div className="mt-10 flex justify-center">
