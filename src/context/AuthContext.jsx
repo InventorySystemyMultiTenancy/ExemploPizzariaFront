@@ -26,6 +26,9 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem("pc_token", payload.accessToken);
     localStorage.setItem("pc_user", JSON.stringify(payload.user));
+    window.dispatchEvent(
+      new CustomEvent("pc_auth_change", { detail: { user: payload.user } }),
+    );
   };
 
   const logout = () => {
@@ -33,6 +36,9 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem("pc_token");
     localStorage.removeItem("pc_user");
+    window.dispatchEvent(
+      new CustomEvent("pc_auth_change", { detail: { user: null } }),
+    );
   };
 
   const value = useMemo(

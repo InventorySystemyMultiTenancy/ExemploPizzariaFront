@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
+import LanguageSelector from "./LanguageSelector.jsx";
 
 const WHATSAPP_NUMBER = "5511971174080";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
@@ -31,6 +33,7 @@ function WhatsAppIcon() {
 export default function Navbar({ activeLink }) {
   const { openCart, items } = useCart();
   const { isAuthenticated, user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
@@ -117,7 +120,7 @@ export default function Navbar({ activeLink }) {
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100"
-              title="Falar no WhatsApp"
+              title={t("NAV_WHATSAPP_TITLE", "Falar no WhatsApp")}
             >
               <WhatsAppIcon />
               <span className="hidden sm:inline">WhatsApp</span>
@@ -131,7 +134,7 @@ export default function Navbar({ activeLink }) {
                   : "text-gray-700"
               }`}
             >
-              Cardápio
+              {t("NAV_CARDAPIO", "Cardápio")}
             </Link>
 
             {isAuthenticated && user?.role !== "MESA" ? (
@@ -140,14 +143,14 @@ export default function Navbar({ activeLink }) {
                   className="text-sm text-gray-500 transition-colors hover:text-rosso"
                   to={painelTo}
                 >
-                  Painel
+                  {t("NAV_PAINEL", "Painel")}
                 </Link>
                 <button
                   type="button"
                   onClick={logout}
                   className="text-sm text-gray-400 transition-colors hover:text-rosso"
                 >
-                  Sair
+                  {t("NAV_SAIR", "Sair")}
                 </button>
               </>
             ) : !isAuthenticated ? (
@@ -155,7 +158,7 @@ export default function Navbar({ activeLink }) {
                 className="text-sm text-gray-600 transition-colors hover:text-rosso"
                 to="/login"
               >
-                Entrar
+                {t("NAV_ENTRAR", "Entrar")}
               </Link>
             ) : null}
 
@@ -165,9 +168,11 @@ export default function Navbar({ activeLink }) {
                 to="/mesa/checkout"
                 className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 animate-pulse"
               >
-                💳 Pagar
+                💳 {t("NAV_PAGAR", "Pagar")}
               </Link>
             )}
+
+            <LanguageSelector />
 
             {/* Cart */}
             <button
@@ -176,7 +181,9 @@ export default function Navbar({ activeLink }) {
               className="relative flex items-center gap-2 rounded-xl bg-rosso px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-ember"
             >
               <span>🛒</span>
-              <span className="hidden sm:inline">Carrinho</span>
+              <span className="hidden sm:inline">
+                {t("NAV_CARRINHO", "Carrinho")}
+              </span>
               {items.length > 0 && (
                 <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-black text-black">
                   {items.length}
@@ -192,9 +199,11 @@ export default function Navbar({ activeLink }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center">
             <p className="text-3xl mb-2">🔒</p>
-            <h2 className="font-bold text-gray-900 mb-1">Encerrar sessão</h2>
+            <h2 className="font-bold text-gray-900 mb-1">
+              {t("MODAL_END_SESSION", "Encerrar sessão")}
+            </h2>
             <p className="text-xs text-gray-500 mb-4">
-              Digite o PIN de funcionário para sair
+              {t("MODAL_PIN_DESC", "Digite o PIN de funcionário para sair")}
             </p>
             <input
               type="password"
@@ -214,20 +223,20 @@ export default function Navbar({ activeLink }) {
             />
             {pinError && (
               <p className="text-xs text-red-500 mb-2">
-                PIN incorreto. Tente novamente.
+                {t("MODAL_PIN_WRONG", "PIN incorreto. Tente novamente.")}
               </p>
             )}
             <button
               onClick={handlePinSubmit}
               className="w-full rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90 mb-2"
             >
-              Confirmar
+              {t("BTN_CONFIRM", "Confirmar")}
             </button>
             <button
               onClick={() => setShowPinModal(false)}
               className="w-full rounded-xl border border-gray-200 py-2.5 text-sm text-gray-500 hover:border-gray-400"
             >
-              Cancelar
+              {t("BTN_CANCEL", "Cancelar")}
             </button>
           </div>
         </div>

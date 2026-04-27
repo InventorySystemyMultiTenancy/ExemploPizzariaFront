@@ -10,6 +10,7 @@ import {
   getPizzaPrice,
   indexProductsById,
 } from "../lib/pizzaBuilder.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 // ─── Categoria helpers ─────────────────────────────────────────────────────────
 const DRINK_KW = [
@@ -208,6 +209,7 @@ function SuggestionBanner({ suggestion, onAdd, adding, onDismiss }) {
 function CartDrawer() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { t } = useTranslation();
   const {
     items,
     isCartOpen,
@@ -330,13 +332,15 @@ function CartDrawer() {
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-          <h3 className="font-display text-2xl text-gray-900">Seu Carrinho</h3>
+          <h3 className="font-display text-2xl text-gray-900">
+            {t("CART_TITLE", "Seu Carrinho")}
+          </h3>
           <button
             type="button"
             onClick={closeCart}
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition hover:bg-gray-50"
           >
-            ✕ Fechar
+            ✕ {t("CART_CLOSE", "Fechar")}
           </button>
         </div>
 
@@ -349,7 +353,7 @@ function CartDrawer() {
           />
           {!items.length ? (
             <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-smoke">
-              Seu carrinho esta vazio.
+              {t("CART_EMPTY", "Seu carrinho está vazio.")}
             </div>
           ) : (
             items.map((item) => (
@@ -384,11 +388,14 @@ function CartDrawer() {
 
                 <div className="mt-3">
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-smoke">
-                    Observação
+                    {t("CART_NOTES_LABEL", "Observação")}
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Ex: sem cebola, sem azeitona..."
+                    placeholder={t(
+                      "CART_NOTES_PH",
+                      "Ex: sem cebola, sem azeitona...",
+                    )}
                     value={item.notes ?? ""}
                     onChange={(e) =>
                       updateItem(item.key, {
@@ -436,7 +443,7 @@ function CartDrawer() {
                       onClick={() => removeItem(item.key)}
                       className="text-xs text-red-400"
                     >
-                      remover
+                      {t("BTN_REMOVE", "remover")}
                     </button>
                   </div>
                 </div>
@@ -448,15 +455,15 @@ function CartDrawer() {
         <footer className="mt-3 border-t border-gray-200 bg-white pt-4 sm:pt-6">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-smoke">
-              <span>Subtotal</span>
+              <span>{t("CART_SUBTOTAL", "Subtotal")}</span>
               <span>{formatted.subtotal}</span>
             </div>
             <div className="flex justify-between text-smoke">
-              <span>Frete</span>
+              <span>{t("CART_FREIGHT", "Frete")}</span>
               <span>{formatted.freight}</span>
             </div>
             <div className="flex justify-between text-lg font-bold text-gold">
-              <span>Total</span>
+              <span>{t("CART_TOTAL", "Total")}</span>
               <span>{formatted.total}</span>
             </div>
           </div>
@@ -480,7 +487,7 @@ function CartDrawer() {
                 : "cursor-not-allowed bg-gray-200 text-gray-400"
             }`}
           >
-            Finalizar Compra
+            {t("CART_BTN_CHECKOUT", "Finalizar Compra")}
           </button>
         </footer>
       </aside>

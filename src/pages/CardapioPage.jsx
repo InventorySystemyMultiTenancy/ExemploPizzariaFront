@@ -7,6 +7,7 @@ import Navbar from "../components/Navbar.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const SIZE_MAP = {
   PEQUENA: "Broto",
@@ -22,9 +23,12 @@ const fmt = (value) =>
 /* ─── Size Picker Modal ─────────────────────────────────────── */
 function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
   const { addItem, openCart } = useCart();
-  const prices = (product.sizes ?? []).filter(
-    (s) => s.size === "PEQUENA" || s.size === "GRANDE",
-  );
+  const { t } = useTranslation();
+  const SIZE_MAP = {
+    PEQUENA: t("SIZE_BROTO", "Broto"),
+    GRANDE: t("SIZE_GRANDE", "Grande"),
+  };
+  const prices = (product.sizes ?? []).filter();
   const pendingMode = Boolean(pendingHalf);
   const [selectedSize, setSelectedSize] = useState(
     pendingHalf?.size ??
@@ -77,7 +81,12 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
         size: selectedSize,
         price: selectedPrice,
       });
-      toast.success("Primeira metade salva. Escolha o próximo sabor.");
+      toast.success(
+        t(
+          "FIRST_HALF_SAVED",
+          "Primeira metade salva. Escolha o próximo sabor.",
+        ),
+      );
       onClose();
       return;
     }
@@ -94,7 +103,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
 
     addItem({
       key: `MEIO_A_MEIO-${pendingHalf.size}-${flavorKey}`,
-      title: "Pizza Meio a Meio",
+      title: t("PIZZA_HALF_HALF", "Pizza Meio a Meio"),
       description: `${flavorNames.join(" / ")} | ${SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}`,
       basePrice: finalPrice,
       price: finalPrice,
@@ -108,7 +117,9 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
     });
 
     onSetPendingHalf(null);
-    toast.success("Pizza meio a meio adicionada ao carrinho.");
+    toast.success(
+      t("PIZZA_HALF_HALF", "Pizza Meio a Meio") + " adicionada ao carrinho.",
+    );
     openCart();
     onClose();
   };
@@ -147,8 +158,8 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
 
         <div className="mb-3 grid grid-cols-2 gap-2">
           {[
-            { id: "INTEIRA", label: "Inteira" },
-            { id: "METADE", label: "Metade" },
+            { id: "INTEIRA", label: t("SIZE_INTEIRA", "Inteira") },
+            { id: "METADE", label: t("SIZE_METADE", "Metade") },
           ].map((option) => (
             <button
               key={option.id}
@@ -204,10 +215,10 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
           className="mt-4 w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white shadow-md transition hover:bg-ember disabled:opacity-40"
         >
           {selectedMode === "METADE" && !pendingHalf
-            ? "Salvar primeira metade"
+            ? t("BTN_SAVE_FIRST_HALF", "Salvar primeira metade")
             : selectedMode === "METADE"
-              ? "Completar meio a meio"
-              : "Adicionar ao Carrinho"}
+              ? t("BTN_COMPLETE_HALF", "Completar meio a meio")
+              : t("BTN_ADD_CART", "Adicionar ao Carrinho")}
         </button>
 
         <button
@@ -215,7 +226,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
           onClick={onClose}
           className="mt-3 w-full py-2 text-sm text-gray-400 transition hover:text-gray-600"
         >
-          Cancelar
+          {t("BTN_CANCEL", "Cancelar")}
         </button>
       </div>
     </div>
@@ -225,6 +236,11 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
 /* ─── Product Card ──────────────────────────────────────────── */
 function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
   const [showModal, setShowModal] = useState(false);
+  const { t } = useTranslation();
+  const SIZE_MAP = {
+    PEQUENA: t("SIZE_BROTO", "Broto"),
+    GRANDE: t("SIZE_GRANDE", "Grande"),
+  };
   const brotPrice = product.sizes?.find((s) => s.size === "PEQUENA");
   const grandePrice = product.sizes?.find((s) => s.size === "GRANDE");
 
@@ -312,6 +328,7 @@ function CardapioPage() {
   const [search, setSearch] = useState("");
   const [pendingHalf, setPendingHalf] = useState(null);
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const { data: mesaOrders = [] } = useQuery({
     queryKey: ["mesa-orders"],
@@ -355,7 +372,7 @@ function CardapioPage() {
   });
 
   const categories = [
-    "Todos",
+    t("CARDAPIO_CAT_ALL", "Todos"),
     ...Array.from(
       new Set(
         products
@@ -368,8 +385,9 @@ function CardapioPage() {
 
   const flavorProducts = products.filter((product) => !product.isCrust);
   const normalizedSearch = search.trim().toLowerCase();
+  const ALL_LABEL = t("CARDAPIO_CAT_ALL", "Todos");
   const filtered =
-    activeCategory === "Todos"
+    activeCategory === ALL_LABEL || activeCategory === "Todos"
       ? flavorProducts
       : flavorProducts.filter(
           (p) => (p.category ?? "Geral") === activeCategory,
@@ -390,10 +408,10 @@ function CardapioPage() {
       {/* Page header */}
       <div className="border-b border-gray-100 bg-gray-50/60 py-7 text-center">
         <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
-          Desde 1997 · 27 anos de tradição
+          {t("CARDAPIO_SINCE", "Desde 1997 · 27 anos de tradição")}
         </p>
         <h1 className="mt-1 font-display text-3xl font-bold text-gray-900 sm:text-4xl">
-          Nosso Cardápio
+          {t("CARDAPIO_TITLE", "Nosso Cardápio")}
         </h1>
       </div>
 
@@ -420,13 +438,16 @@ function CardapioPage() {
       <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-8">
         <div className="mt-1">
           <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
-            Buscar no cardapio
+            {t("CARDAPIO_SEARCH_LABEL", "Buscar no cardápio")}
           </label>
           <input
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Ex: calabresa, frango, doce..."
+            placeholder={t(
+              "CARDAPIO_SEARCH_PH",
+              "Ex: calabresa, frango, doce...",
+            )}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-rosso/40"
           />
         </div>
@@ -444,7 +465,7 @@ function CardapioPage() {
               onClick={() => setPendingHalf(null)}
               className="shrink-0 rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
             >
-              Cancelar metade
+              {t("CANCEL_HALF", "Cancelar metade")}
             </button>
           </div>
         )}
@@ -494,13 +515,16 @@ function CardapioPage() {
 
         {isError && (
           <p className="py-16 text-center text-gray-500">
-            Não foi possível carregar o cardápio. Tente novamente.
+            {t(
+              "CARDAPIO_ERROR",
+              "Não foi possível carregar o cardápio. Tente novamente.",
+            )}
           </p>
         )}
 
         {!isLoading && !isError && filtered.length === 0 && (
           <p className="py-16 text-center text-gray-400">
-            Nenhum item nesta categoria.
+            {t("CARDAPIO_EMPTY_CAT", "Nenhum item nesta categoria.")}
           </p>
         )}
 
@@ -509,7 +533,7 @@ function CardapioPage() {
           filtered.length > 0 &&
           searched.length === 0 && (
             <p className="py-16 text-center text-gray-400">
-              Nenhum item encontrado para "{search}".
+              {t("CARDAPIO_EMPTY_CAT", "Nenhum item nesta categoria.")}
             </p>
           )}
 
@@ -528,7 +552,10 @@ function CardapioPage() {
       </section>
 
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-        Pizzaria Fellice © 2024 · O seu momento de ser feliz!
+        {t(
+          "FOOTER_COPYRIGHT",
+          "Pizzaria Fellice © 2024 · O seu momento de ser feliz!",
+        )}
       </footer>
 
       {/* Banner fixo de pagamento pendente (só MESA) */}
@@ -539,7 +566,7 @@ function CardapioPage() {
             className="flex items-center justify-between gap-3 rounded-2xl bg-amber-500 px-5 py-4 shadow-2xl text-white font-semibold"
           >
             <span className="flex items-center gap-2 text-sm">
-              💳 Pagamento pendente
+              💳 {t("CARDAPIO_PAYMENT_PENDING", "Pagamento pendente")}
             </span>
             <span className="text-base font-bold">
               {Number(pendingTotal).toLocaleString("pt-BR", {
