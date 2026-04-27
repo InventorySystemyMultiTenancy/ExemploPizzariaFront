@@ -253,16 +253,22 @@ function CheckoutPage() {
             </svg>
           </div>
           <h1 className="mt-5 font-display text-2xl text-gold">
-            {t('CHECKOUT_WAITING_TITLE', 'Aguardando pagamento')}
+            {t("CHECKOUT_WAITING_TITLE", "Aguardando pagamento")}
           </h1>
           <p className="mt-2 text-sm text-smoke">
-            {t('CHECKOUT_WAITING_DESC', 'A página do Mercado Pago foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui.')}
+            {t(
+              "CHECKOUT_WAITING_DESC",
+              "A página do Mercado Pago foi aberta em outra aba. Conclua o pagamento por lá e aguarde a confirmação aqui.",
+            )}
           </p>
           <p className="mt-4 rounded-xl bg-gray-50 px-4 py-2 font-mono text-xs text-smoke">
             Pedido: #{waitingOrderId.slice(-8).toUpperCase()}
           </p>
           <p className="mt-3 text-xs text-smoke">
-            {t('CHECKOUT_WAITING_UPDATE', 'Esta página atualiza automaticamente a cada poucos segundos.')}
+            {t(
+              "CHECKOUT_WAITING_UPDATE",
+              "Esta página atualiza automaticamente a cada poucos segundos.",
+            )}
           </p>
         </div>
       </main>
@@ -277,14 +283,14 @@ function CheckoutPage() {
           onClick={() => navigate(-1)}
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          {t('BTN_BACK', '← Voltar')}
+          {t("BTN_BACK", "← Voltar")}
         </button>
         <h1 className="font-display text-3xl text-gold">Checkout</h1>
       </div>
 
       {!items.length ? (
         <p className="mt-6 rounded-2xl border border-gray-200 bg-gray-100 p-4 text-sm text-smoke">
-          {t('CHECKOUT_EMPTY', 'Seu carrinho está vazio.')}
+          {t("CHECKOUT_EMPTY", "Seu carrinho está vazio.")}
         </p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -302,7 +308,7 @@ function CheckoutPage() {
                       : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
                   }`}
                 >
-                >\n                  {t('CHECKOUT_DELIVERY', '🛵 Entrega')}
+                  {t("CHECKOUT_DELIVERY", "🛵 Entrega")}
                 </button>
                 <button
                   type="button"
@@ -313,14 +319,17 @@ function CheckoutPage() {
                       : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
                   }`}
                 >
-                  {t('CHECKOUT_PICKUP', '🏠 Retirada no local')}
+                  {t("CHECKOUT_PICKUP", "🏠 Retirada no local")}
                 </button>
               </div>
 
               {deliveryType === "retirada" ? (
                 <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-center">
                   <p className="font-bold text-green-800">
-                    {t('CHECKOUT_PICKUP_FREE', 'Retirada no local — Frete grátis')}
+                    {t(
+                      "CHECKOUT_PICKUP_FREE",
+                      "Retirada no local — Frete grátis",
+                    )}
                   </p>
                   <p className="mt-1 text-xs text-green-700">
                     Av. Cachoeira Paulista, 17 — CEP 03551-000, São Paulo
@@ -329,14 +338,14 @@ function CheckoutPage() {
               ) : (
                 <>
                   <h2 className="font-display text-xl text-gold">
-                    {t('CHECKOUT_ADDRESS_TITLE', 'Endereço de Entrega')}
+                    {t("CHECKOUT_ADDRESS_TITLE", "Endereço de Entrega")}
                   </h2>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     {/* CEP */}
                     <div className="col-span-2 sm:col-span-1">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_CEP', 'CEP')} *
+                        {t("CHECKOUT_CEP", "CEP")} *
                       </label>
                       <input
                         type="text"
@@ -352,7 +361,7 @@ function CheckoutPage() {
                     {/* Número */}
                     <div className="col-span-2 sm:col-span-1">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_NUMBER', 'Número')} *
+                        {t("CHECKOUT_NUMBER", "Número")} *
                       </label>
                       <input
                         type="text"
@@ -369,7 +378,7 @@ function CheckoutPage() {
                     {/* Rua */}
                     <div className="col-span-2">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_STREET', 'Rua')}
+                        {t("CHECKOUT_STREET", "Rua")}
                       </label>
                       <input
                         type="text"
@@ -383,7 +392,7 @@ function CheckoutPage() {
                     {/* Complemento */}
                     <div className="col-span-2 sm:col-span-1">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_COMPLEMENT', 'Complemento')}
+                        {t("CHECKOUT_COMPLEMENT", "Complemento")}
                       </label>
                       <input
                         type="text"
@@ -397,7 +406,7 @@ function CheckoutPage() {
                     {/* Bairro */}
                     <div className="col-span-2 sm:col-span-1">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_NEIGHBORHOOD', 'Bairro')}
+                        {t("CHECKOUT_NEIGHBORHOOD", "Bairro")}
                       </label>
                       <input
                         type="text"
@@ -411,7 +420,7 @@ function CheckoutPage() {
                     {/* Referência */}
                     <div className="col-span-2">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_REFERENCE', 'Ponto de referência')}
+                        {t("CHECKOUT_REFERENCE", "Ponto de referência")}
                       </label>
                       <input
                         type="text"
@@ -425,7 +434,7 @@ function CheckoutPage() {
                     {/* Obs */}
                     <div className="col-span-2">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">
-                        {t('CHECKOUT_NOTES_LABEL', 'Observações do pedido')}
+                        {t("CHECKOUT_NOTES_LABEL", "Observações do pedido")}
                       </label>
                       <textarea
                         rows={2}
@@ -445,8 +454,8 @@ function CheckoutPage() {
                     className="mt-4 w-full rounded-2xl bg-rosso py-3 text-sm font-bold text-white transition hover:bg-ember disabled:opacity-50"
                   >
                     {freightLoading
-                      ? t('BTN_CALC_FREIGHT_LOADING', 'Calculando frete...')
-                      : t('BTN_CALC_FREIGHT', 'Calcular Frete 🛵')}
+                      ? t("BTN_CALC_FREIGHT_LOADING", "Calculando frete...")
+                      : t("BTN_CALC_FREIGHT", "Calcular Frete 🛵")}
                   </button>
 
                   {freightError && (
