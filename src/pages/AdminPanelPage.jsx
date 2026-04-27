@@ -15,11 +15,13 @@ import {
   getStaffUnreadCount,
   subscribeToStaffUnreadCount,
 } from "../lib/staffAlertsStore.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function AdminPanelPage() {
+  const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const [unreadCount, setUnreadCount] = useState(() => getStaffUnreadCount());
   const [desktopEnabled, setDesktopEnabled] = useState(() =>
@@ -94,31 +96,44 @@ function AdminPanelPage() {
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl text-gold">Painel Admin</h1>
+          <h1 className="font-display text-3xl text-gold">
+            {t("ADMIN_PANEL_TITLE", "Painel Admin")}
+          </h1>
           <p className="mt-1 text-sm text-smoke">
-            Visao operacional para equipe da Pizzaria Fellice.
+            {t(
+              "ADMIN_PANEL_SUBTITLE",
+              "Visao operacional para equipe da Pizzaria Fellice.",
+            )}
           </p>
         </div>
         <Link
           to="/"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          ← Início
+          {t("ADMIN_PANEL_BACK_HOME", "← Início")}
         </Link>
       </div>
       <p className="text-xs text-red-300">
         {overdueCount
-          ? `${overdueCount} pedidos exigem atencao imediata`
-          : "Operacao sem atrasos no momento"}
+          ? t(
+              "ADMIN_PANEL_OVERDUE_COUNT",
+              "{{count}} pedidos exigem atencao imediata",
+            ).replace("{{count}}", String(overdueCount))
+          : t("ADMIN_PANEL_NO_DELAYS", "Operacao sem atrasos no momento")}
       </p>
       <p className="mt-1 text-xs text-gold/90">
         {unreadCount
-          ? `${unreadCount} novos alertas da equipe`
-          : "Nenhum alerta novo"}
+          ? t(
+              "ADMIN_PANEL_ALERTS_COUNT",
+              "{{count}} novos alertas da equipe",
+            ).replace("{{count}}", String(unreadCount))
+          : t("ADMIN_PANEL_NO_ALERTS", "Nenhum alerta novo")}
       </p>
       <p className="mt-1 text-xs text-smoke">
-        Desktop:{" "}
-        {desktopEnabled ? "notificacoes ativas" : "notificacoes inativas"}
+        {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}:{" "}
+        {desktopEnabled
+          ? t("ADMIN_PANEL_DESKTOP_ON", "notificacoes ativas")
+          : t("ADMIN_PANEL_DESKTOP_OFF", "notificacoes inativas")}
       </p>
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -128,10 +143,13 @@ function AdminPanelPage() {
         >
           <p className="text-2xl">🍕</p>
           <h2 className="mt-2 font-semibold text-gray-900">
-            Gerenciar Produtos
+            {t("ADMIN_PANEL_CARD_PRODUCTS_TITLE", "Gerenciar Produtos")}
           </h2>
           <p className="mt-1 text-xs text-smoke">
-            Cadastrar, editar e desativar itens do cardapio
+            {t(
+              "ADMIN_PANEL_CARD_PRODUCTS_DESC",
+              "Cadastrar, editar e desativar itens do cardapio",
+            )}
           </p>
         </Link>
         <Link
@@ -140,10 +158,13 @@ function AdminPanelPage() {
         >
           <p className="text-2xl">📈</p>
           <h2 className="mt-2 font-semibold text-gray-900">
-            Análise de Vendas
+            {t("ADMIN_PANEL_CARD_SALES_TITLE", "Análise de Vendas")}
           </h2>
           <p className="mt-1 text-xs text-smoke">
-            Receita, ticket medio e sabores mais vendidos
+            {t(
+              "ADMIN_PANEL_CARD_SALES_DESC",
+              "Receita, ticket medio e sabores mais vendidos",
+            )}
           </p>
         </Link>
         <Link
@@ -152,10 +173,13 @@ function AdminPanelPage() {
         >
           <p className="text-2xl">👨‍🍳</p>
           <h2 className="mt-2 font-semibold text-gray-900">
-            Painel da Cozinha
+            {t("ADMIN_PANEL_CARD_KITCHEN_TITLE", "Painel da Cozinha")}
           </h2>
           <p className="mt-1 text-xs text-smoke">
-            Ver pedidos ativos e avançar status
+            {t(
+              "ADMIN_PANEL_CARD_KITCHEN_DESC",
+              "Ver pedidos ativos e avançar status",
+            )}
           </p>
         </Link>
         <Link
@@ -164,10 +188,13 @@ function AdminPanelPage() {
         >
           <p className="text-2xl">📋</p>
           <h2 className="mt-2 font-semibold text-gray-900">
-            Histórico de Pedidos
+            {t("ADMIN_PANEL_CARD_HISTORY_TITLE", "Histórico de Pedidos")}
           </h2>
           <p className="mt-1 text-xs text-smoke">
-            Todos os pedidos, cancelamentos e estornos
+            {t(
+              "ADMIN_PANEL_CARD_HISTORY_DESC",
+              "Todos os pedidos, cancelamentos e estornos",
+            )}
           </p>
         </Link>
         <Link
@@ -175,9 +202,14 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">👤</p>
-          <h2 className="mt-2 font-semibold text-gray-900">Criar Usuário</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            {t("ADMIN_PANEL_CARD_USERS_TITLE", "Criar Usuário")}
+          </h2>
           <p className="mt-1 text-xs text-smoke">
-            Cadastrar motoboy, cozinha, funcionário ou admin
+            {t(
+              "ADMIN_PANEL_CARD_USERS_DESC",
+              "Cadastrar motoboy, cozinha, funcionário ou admin",
+            )}
           </p>
         </Link>
         <Link
@@ -185,19 +217,26 @@ function AdminPanelPage() {
           className="rounded-2xl border border-gold/20 bg-lacquer/70 p-5 transition hover:border-gold/50"
         >
           <p className="text-2xl">🪑</p>
-          <h2 className="mt-2 font-semibold text-gray-900">Mesas</h2>
+          <h2 className="mt-2 font-semibold text-gray-900">
+            {t("ADMIN_PANEL_CARD_TABLES_TITLE", "Mesas")}
+          </h2>
           <p className="mt-1 text-xs text-smoke">
-            Cadastrar mesas, maquininhas e gerar QR codes
+            {t(
+              "ADMIN_PANEL_CARD_TABLES_DESC",
+              "Cadastrar mesas, maquininhas e gerar QR codes",
+            )}
           </p>
         </Link>
       </div>
 
       {isLoading ? (
-        <p className="mt-5 text-sm text-smoke">Carregando dados...</p>
+        <p className="mt-5 text-sm text-smoke">
+          {t("ADMIN_PANEL_LOADING", "Carregando dados...")}
+        </p>
       ) : null}
       {isError ? (
         <p className="mt-5 text-sm text-red-300">
-          Falha ao carregar dados do painel.
+          {t("ADMIN_PANEL_LOAD_ERROR", "Falha ao carregar dados do painel.")}
         </p>
       ) : null}
 
@@ -206,7 +245,10 @@ function AdminPanelPage() {
         <section className="rounded-3xl border border-gold/20 bg-lacquer/70 p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-xl text-gold">
-              Fila Prioritaria (preview)
+              {t(
+                "ADMIN_PANEL_PRIORITY_QUEUE_TITLE",
+                "Fila Prioritaria (preview)",
+              )}
             </h2>
             <div className="flex items-center gap-2">
               <button
@@ -218,14 +260,20 @@ function AdminPanelPage() {
                     : "border-gray-200 text-smoke hover:border-gold/30 hover:text-gold"
                 }`}
               >
-                Desktop {desktopEnabled ? "ligado" : "desligado"}
+                {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}{" "}
+                {desktopEnabled
+                  ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
+                  : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
               </button>
               <button
                 type="button"
                 onClick={() => clearStaffUnreadCount()}
                 className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
               >
-                Marcar alertas como vistos{" "}
+                {t(
+                  "ADMIN_PANEL_MARK_ALERTS_READ",
+                  "Marcar alertas como vistos",
+                )}{" "}
                 {unreadCount ? `(${unreadCount})` : ""}
               </button>
             </div>
@@ -244,12 +292,18 @@ function AdminPanelPage() {
                   <p className="font-semibold">#{order.id.slice(0, 8)}</p>
                   <EstimatedTimeBadge compact now={currentNow} order={order} />
                 </div>
-                <p className="mt-1 text-smoke">Status: {order.status}</p>
+                <p className="mt-1 text-smoke">
+                  {t("ADMIN_PANEL_STATUS_LABEL", "Status")}: {""}
+                  {t(`ORDER_STATUS_${order.status}`, order.status)}
+                </p>
               </li>
             ))}
             {!prioritizedOrders.length && !isLoading ? (
               <li className="text-sm text-smoke">
-                Sem pedidos para exibir no momento.
+                {t(
+                  "ADMIN_PANEL_NO_ORDERS",
+                  "Sem pedidos para exibir no momento.",
+                )}
               </li>
             ) : null}
           </ul>
@@ -259,7 +313,8 @@ function AdminPanelPage() {
         <section className="rounded-3xl border border-amber-400/30 bg-lacquer/70 p-4 sm:p-6">
           <div className="flex items-center gap-2">
             <h2 className="font-display text-xl text-amber-500">
-              💳 Pagamentos Pendentes
+              💳{" "}
+              {t("ADMIN_PANEL_PENDING_PAYMENTS_TITLE", "Pagamentos Pendentes")}
             </h2>
             {pendingMesaOrders.length > 0 && (
               <span className="animate-pulse rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
@@ -275,20 +330,27 @@ function AdminPanelPage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-amber-800">
-                    🪑 {order.mesa?.name ?? `Mesa`}
+                    🪑 {order.mesa?.name ?? t("ADMIN_PANEL_MESA_LABEL", "Mesa")}
                   </p>
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                     {currency(order.total)}
                   </span>
                 </div>
                 <p className="mt-1 text-amber-700">
-                  #{order.id.slice(0, 8)} · {order.paymentStatus ?? "PENDENTE"}
+                  #{order.id.slice(0, 8)} ·{" "}
+                  {t(
+                    `PAYMENT_STATUS_${order.paymentStatus ?? "PENDENTE"}`,
+                    order.paymentStatus ?? "PENDENTE",
+                  )}
                 </p>
               </li>
             ))}
             {!pendingMesaOrders.length && !isLoading ? (
               <li className="text-sm text-smoke">
-                Nenhuma mesa com pagamento pendente.
+                {t(
+                  "ADMIN_PANEL_NO_PENDING_PAYMENTS",
+                  "Nenhuma mesa com pagamento pendente.",
+                )}
               </li>
             ) : null}
           </ul>

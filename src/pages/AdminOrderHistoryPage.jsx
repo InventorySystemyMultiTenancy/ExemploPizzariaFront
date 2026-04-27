@@ -3,15 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import toast from "react-hot-toast";
-
-const STATUS_LABEL = {
-  RECEBIDO: "Recebido",
-  PREPARANDO: "Preparando",
-  NO_FORNO: "No Forno",
-  SAIU_PARA_ENTREGA: "Saiu p/ Entrega",
-  ENTREGUE: "Entregue",
-  CANCELADO: "Cancelado",
-};
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const STATUS_CLASS = {
   RECEBIDO: "bg-blue-100 text-blue-700",
@@ -20,13 +12,6 @@ const STATUS_CLASS = {
   SAIU_PARA_ENTREGA: "bg-green-100 text-green-700",
   ENTREGUE: "bg-gray-200 text-gray-700",
   CANCELADO: "bg-red-100 text-red-700",
-};
-
-const PAYMENT_LABEL = {
-  PENDENTE: "Pendente",
-  APROVADO: "Aprovado",
-  RECUSADO: "Recusado",
-  ESTORNADO: "Estornado",
 };
 
 const PAYMENT_CLASS = {
@@ -46,6 +31,7 @@ const formatDate = (iso) =>
   });
 
 function AdminOrderHistoryPage() {
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [clientName, setClientName] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -126,9 +112,14 @@ function AdminOrderHistoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-order-history"] });
-      toast.success("Pagamento marcado como aprovado");
+      toast.success(
+        t("ADMIN_HISTORY_PAYMENT_MARKED", "Pagamento marcado como aprovado"),
+      );
     },
-    onError: () => toast.error("Falha ao atualizar pagamento"),
+    onError: () =>
+      toast.error(
+        t("ADMIN_HISTORY_PAYMENT_UPDATE_ERROR", "Falha ao atualizar pagamento"),
+      ),
   });
 
   return (
@@ -137,17 +128,20 @@ function AdminOrderHistoryPage() {
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl text-gold">
-            Histórico de Pedidos
+            {t("ADMIN_HISTORY_TITLE", "Histórico de Pedidos")}
           </h1>
           <p className="mt-1 text-sm text-smoke">
-            Todos os pedidos — entregues, cancelados e em andamento.
+            {t(
+              "ADMIN_HISTORY_SUBTITLE",
+              "Todos os pedidos — entregues, cancelados e em andamento.",
+            )}
           </p>
         </div>
         <Link
           to="/admin"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          ← Admin
+          {t("ADMIN_HISTORY_BACK", "← Admin")}
         </Link>
       </div>
 
@@ -158,11 +152,20 @@ function AdminOrderHistoryPage() {
             <p className="font-semibold text-red-700">
               ⚠️ {needsRefund.length}{" "}
               {needsRefund.length === 1
-                ? "pedido cancelado precisa de estorno"
-                : "pedidos cancelados precisam de estorno"}
+                ? t(
+                    "ADMIN_HISTORY_REFUND_NEEDS_SINGLE",
+                    "pedido cancelado precisa de estorno",
+                  )
+                : t(
+                    "ADMIN_HISTORY_REFUND_NEEDS_MULTI",
+                    "pedidos cancelados precisam de estorno",
+                  )}
             </p>
             <p className="mt-0.5 text-xs text-red-600">
-              O cliente já havia pago e o pagamento foi aprovado.
+              {t(
+                "ADMIN_HISTORY_REFUND_HINT",
+                "O cliente já havia pago e o pagamento foi aprovado.",
+              )}
             </p>
           </div>
           <button
@@ -174,7 +177,9 @@ function AdminOrderHistoryPage() {
                 : "border-red-300 bg-white text-red-700 hover:bg-red-100"
             }`}
           >
-            {showOnlyRefund ? "Ver todos" : "Ver só estornos"}
+            {showOnlyRefund
+              ? t("ADMIN_HISTORY_SHOW_ALL", "Ver todos")
+              : t("ADMIN_HISTORY_SHOW_REFUNDS", "Ver só estornos")}
           </button>
         </div>
       )}
@@ -182,7 +187,7 @@ function AdminOrderHistoryPage() {
       {/* Filters */}
       <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-smoke">
-          Filtros
+          {t("ADMIN_HISTORY_FILTERS", "Filtros")}
         </p>
         <div className="flex flex-wrap gap-3">
           {/* Client name with autocomplete */}
@@ -190,7 +195,7 @@ function AdminOrderHistoryPage() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Nome do cliente"
+              placeholder={t("ADMIN_HISTORY_CLIENT_NAME", "Nome do cliente")}
               value={clientName}
               autoComplete="off"
               onChange={(e) => {
@@ -228,7 +233,9 @@ function AdminOrderHistoryPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-smoke">De</label>
+            <label className="text-xs text-smoke">
+              {t("ADMIN_HISTORY_FROM", "De")}
+            </label>
             <input
               type="date"
               value={dateFrom}
@@ -237,7 +244,9 @@ function AdminOrderHistoryPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-smoke">Até</label>
+            <label className="text-xs text-smoke">
+              {t("ADMIN_HISTORY_TO", "Até")}
+            </label>
             <input
               type="date"
               value={dateTo}
@@ -250,14 +259,14 @@ function AdminOrderHistoryPage() {
             onClick={handleApply}
             className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            Filtrar
+            {t("ADMIN_HISTORY_FILTER", "Filtrar")}
           </button>
           <button
             type="button"
             onClick={handleClear}
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400"
           >
-            Limpar
+            {t("ADMIN_HISTORY_CLEAR", "Limpar")}
           </button>
         </div>
       </section>
@@ -266,8 +275,15 @@ function AdminOrderHistoryPage() {
       {!isLoading && !isError && (
         <p className="mb-3 text-xs text-smoke">
           {displayed.length}{" "}
-          {displayed.length === 1 ? "pedido encontrado" : "pedidos encontrados"}
-          {showOnlyRefund ? " — mostrando apenas estornos pendentes" : ""}
+          {displayed.length === 1
+            ? t("ADMIN_HISTORY_FOUND_SINGLE", "pedido encontrado")
+            : t("ADMIN_HISTORY_FOUND_MULTI", "pedidos encontrados")}
+          {showOnlyRefund
+            ? t(
+                "ADMIN_HISTORY_ONLY_REFUNDS_SUFFIX",
+                " — mostrando apenas estornos pendentes",
+              )
+            : ""}
         </p>
       )}
 
@@ -283,14 +299,17 @@ function AdminOrderHistoryPage() {
       {/* Error */}
       {isError && (
         <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          Erro ao carregar histórico de pedidos.
+          {t(
+            "ADMIN_HISTORY_LOAD_ERROR",
+            "Erro ao carregar histórico de pedidos.",
+          )}
         </p>
       )}
 
       {/* Empty */}
       {!isLoading && !isError && displayed.length === 0 && (
         <p className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-smoke">
-          Nenhum pedido encontrado.
+          {t("ADMIN_HISTORY_EMPTY", "Nenhum pedido encontrado.")}
         </p>
       )}
 
@@ -329,7 +348,7 @@ function AdminOrderHistoryPage() {
                     </span>
                     {needsRefundFlag && (
                       <span className="shrink-0 rounded-full bg-red-200 px-2 py-0.5 text-[10px] font-bold text-red-800">
-                        ESTORNO PENDENTE
+                        {t("ADMIN_HISTORY_REFUND_PENDING", "ESTORNO PENDENTE")}
                       </span>
                     )}
                   </div>
@@ -340,13 +359,15 @@ function AdminOrderHistoryPage() {
                     <span
                       className={`rounded-xl px-2 py-1 text-xs font-bold ${STATUS_CLASS[order.status] ?? "bg-gray-100 text-gray-700"}`}
                     >
-                      {STATUS_LABEL[order.status] ?? order.status}
+                      {t(`ORDER_STATUS_${order.status}`, order.status)}
                     </span>
                     <span
                       className={`rounded-xl px-2 py-1 text-xs font-bold ${PAYMENT_CLASS[order.paymentStatus] ?? "bg-gray-100 text-gray-700"}`}
                     >
-                      {PAYMENT_LABEL[order.paymentStatus] ??
-                        order.paymentStatus}
+                      {t(
+                        `PAYMENT_STATUS_${order.paymentStatus}`,
+                        order.paymentStatus,
+                      )}
                     </span>
                     <span className="text-sm font-bold text-gray-900">
                       R$ {Number(order.total).toFixed(2)}
@@ -374,7 +395,9 @@ function AdminOrderHistoryPage() {
                       onClick={() => markAsPaid(order.id)}
                       className="shrink-0 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
                     >
-                      {isPaying && payingId === order.id ? "..." : "✓ Pago"}
+                      {isPaying && payingId === order.id
+                        ? "..."
+                        : t("ADMIN_HISTORY_MARK_PAID", "✓ Pago")}
                     </button>
                   )}
               </div>
@@ -388,15 +411,18 @@ function AdminOrderHistoryPage() {
 
                   {needsRefundFlag && (
                     <div className="mb-3 rounded-xl border border-red-200 bg-red-100 px-3 py-2 text-xs text-red-800 font-semibold">
-                      ⚠️ Pedido cancelado após pagamento aprovado — realizar
-                      estorno ao cliente.
+                      ⚠️{" "}
+                      {t(
+                        "ADMIN_HISTORY_REFUND_WARNING",
+                        "Pedido cancelado após pagamento aprovado — realizar estorno ao cliente.",
+                      )}
                     </div>
                   )}
 
                   {order.deliveryAddress && (
                     <p className="mb-2 text-xs text-smoke">
                       <span className="font-semibold text-gray-700">
-                        Endereço:
+                        {t("ADMIN_HISTORY_ADDRESS", "Endereço")}:
                       </span>{" "}
                       {order.deliveryAddress}
                     </p>
@@ -404,7 +430,7 @@ function AdminOrderHistoryPage() {
 
                   {order.notes && (
                     <p className="mb-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs text-gray-700">
-                      Obs: {order.notes}
+                      {t("ADMIN_HISTORY_NOTES", "Obs")}: {order.notes}
                     </p>
                   )}
 
@@ -416,8 +442,9 @@ function AdminOrderHistoryPage() {
                       >
                         <span className="text-gray-900">
                           {item.type === "MEIO_A_MEIO"
-                            ? `Meio a Meio — ${item.firstHalfProduct?.name ?? "?"} / ${item.secondHalfProduct?.name ?? "?"}`
-                            : (item.product?.name ?? "Pizza")}
+                            ? `${t("ADMIN_HISTORY_HALF_HALF", "Meio a Meio")} — ${item.firstHalfProduct?.name ?? "?"} / ${item.secondHalfProduct?.name ?? "?"}`
+                            : (item.product?.name ??
+                              t("ADMIN_HISTORY_PIZZA", "Pizza"))}
                           <span className="ml-2 text-xs text-gray-500">
                             {item.size} × {item.quantity}
                           </span>
@@ -430,7 +457,11 @@ function AdminOrderHistoryPage() {
                   </ul>
 
                   <p className="mt-3 text-right text-sm font-bold text-gray-900">
-                    Total: R$ {Number(order.total).toFixed(2)}
+                    {t("ADMIN_HISTORY_TOTAL", "Total")}:{" "}
+                    {Number(order.total).toLocaleString(locale || "pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
                   </p>
                 </div>
               )}

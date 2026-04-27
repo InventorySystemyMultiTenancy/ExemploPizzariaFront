@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const SIZES = ["PEQUENA", "GRANDE"];
 const SIZE_LABEL = {
@@ -29,6 +30,7 @@ const emptyForm = () => ({
 });
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
 
@@ -80,11 +82,18 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(isEdit ? "Produto atualizado!" : "Produto criado!");
+      toast.success(
+        isEdit
+          ? t("ADMIN_PRODUCTS_UPDATED", "Produto atualizado!")
+          : t("ADMIN_PRODUCTS_CREATED", "Produto criado!"),
+      );
       onClose();
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message ?? "Erro ao salvar produto");
+      toast.error(
+        err?.response?.data?.message ??
+          t("ADMIN_PRODUCTS_SAVE_ERROR", "Erro ao salvar produto"),
+      );
     },
   });
 
@@ -173,20 +182,25 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
       <div className="relative z-10 my-auto w-full max-w-lg rounded-3xl border border-gold/20 bg-white p-6 shadow-2xl">
         <h2 className="font-display text-2xl text-gold">
-          {isEdit ? "Editar Produto" : "Novo Produto"}
+          {isEdit
+            ? t("ADMIN_PRODUCTS_EDIT_TITLE", "Editar Produto")
+            : t("ADMIN_PRODUCTS_NEW_TITLE", "Novo Produto")}
         </h2>
 
         <form onSubmit={onSubmit} className="mt-5 space-y-4">
           {/* Name */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              Nome *
+              {t("ADMIN_PRODUCTS_NAME_LABEL", "Nome *")}
             </label>
             <input
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
-              placeholder="Ex: Calabresa Imperial"
+              placeholder={t(
+                "ADMIN_PRODUCTS_NAME_PLACEHOLDER",
+                "Ex: Calabresa Imperial",
+              )}
             />
             {errors.name && (
               <p className="mt-1 text-xs text-red-400">{errors.name}</p>
@@ -196,7 +210,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           {/* Description */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              Descrição
+              {t("ADMIN_PRODUCTS_DESCRIPTION_LABEL", "Descrição")}
             </label>
             <textarea
               value={form.description}
@@ -205,14 +219,17 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
               }
               rows={2}
               className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
-              placeholder="Breve descrição do sabor..."
+              placeholder={t(
+                "ADMIN_PRODUCTS_DESCRIPTION_PLACEHOLDER",
+                "Breve descrição do sabor...",
+              )}
             />
           </div>
 
           {/* Category */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              Categoria
+              {t("ADMIN_PRODUCTS_CATEGORY_LABEL", "Categoria")}
             </label>
             <input
               list="category-options"
@@ -221,7 +238,10 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                 setForm((p) => ({ ...p, category: e.target.value }))
               }
               className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
-              placeholder="Ex: Doce, Salgado, Bebidas..."
+              placeholder={t(
+                "ADMIN_PRODUCTS_CATEGORY_PLACEHOLDER",
+                "Ex: Doce, Salgado, Bebidas...",
+              )}
             />
             <datalist id="category-options">
               {existingCategories.map((cat) => (
@@ -232,7 +252,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 
           <div>
             <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
-              Tipo do produto
+              {t("ADMIN_PRODUCTS_TYPE_LABEL", "Tipo do produto")}
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -246,7 +266,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                     : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
                 }`}
               >
-                Pizza
+                {t("ADMIN_PRODUCTS_TYPE_PIZZA", "Pizza")}
               </button>
               <button
                 type="button"
@@ -259,7 +279,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                     : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
                 }`}
               >
-                Borda recheada
+                {t("ADMIN_PRODUCTS_TYPE_CRUST", "Borda recheada")}
               </button>
               <button
                 type="button"
@@ -272,7 +292,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                     : "border-gray-200 bg-gray-100 text-smoke hover:border-gold/20"
                 }`}
               >
-                Outros
+                {t("ADMIN_PRODUCTS_TYPE_OTHER", "Outros")}
               </button>
             </div>
           </div>
@@ -280,7 +300,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           {/* Image URL */}
           <div>
             <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
-              URL da Imagem
+              {t("ADMIN_PRODUCTS_IMAGE_URL", "URL da Imagem")}
             </label>
             <input
               value={form.imageUrl}
@@ -307,14 +327,14 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           <div>
             <label className="mb-2 block text-xs uppercase tracking-widest text-smoke">
               {form.productType === PRODUCT_TYPE.OTHER
-                ? "Preço e custo *"
-                : "Preços por Tamanho *"}
+                ? t("ADMIN_PRODUCTS_PRICE_COST", "Preço e custo *")
+                : t("ADMIN_PRODUCTS_PRICES_BY_SIZE", "Preços por Tamanho *")}
             </label>
             {form.productType === PRODUCT_TYPE.OTHER ? (
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-0.5 block text-xs text-smoke">
-                    Preço de venda
+                    {t("ADMIN_PRODUCTS_SALE_PRICE", "Preço de venda")}
                   </label>
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-smoke">R$</span>
@@ -338,7 +358,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                 </div>
                 <div>
                   <label className="mb-0.5 block text-xs text-smoke">
-                    Custo (opcional)
+                    {t("ADMIN_PRODUCTS_COST_OPTIONAL", "Custo (opcional)")}
                   </label>
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-smoke">R$</span>
@@ -369,12 +389,12 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                 {form.sizes.map(({ size, price, costPrice }) => (
                   <div key={size}>
                     <p className="mb-1 text-xs font-semibold text-smoke">
-                      {SIZE_LABEL[size]}
+                      {t(`SIZE_${size}`, SIZE_LABEL[size])}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="mb-0.5 block text-xs text-smoke">
-                          Preço de venda
+                          {t("ADMIN_PRODUCTS_SALE_PRICE", "Preço de venda")}
                         </label>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-smoke">R$</span>
@@ -398,7 +418,10 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                       </div>
                       <div>
                         <label className="mb-0.5 block text-xs text-smoke">
-                          Custo (opcional)
+                          {t(
+                            "ADMIN_PRODUCTS_COST_OPTIONAL",
+                            "Custo (opcional)",
+                          )}
                         </label>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-smoke">R$</span>
@@ -436,14 +459,18 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
               onClick={onClose}
               className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm text-smoke transition hover:border-gray-400"
             >
-              Cancelar
+              {t("BTN_CANCEL", "Cancelar")}
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
               className="flex-1 rounded-2xl bg-gradient-to-r from-ember to-red-500 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
             >
-              {mutation.isPending ? "Salvando..." : isEdit ? "Salvar" : "Criar"}
+              {mutation.isPending
+                ? t("ADMIN_PRODUCTS_SAVING", "Salvando...")
+                : isEdit
+                  ? t("BTN_SAVE", "Salvar")
+                  : t("ADMIN_PRODUCTS_CREATE", "Criar")}
             </button>
           </div>
         </form>
@@ -453,12 +480,13 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 }
 
 function ProductCard({ product, onEdit }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const productTypeLabel = product.isCrust
-    ? "Borda recheada"
+    ? t("ADMIN_PRODUCTS_TYPE_CRUST", "Borda recheada")
     : (product.sizes?.length ?? 0) <= 1
-      ? "Outros"
-      : "Sabor";
+      ? t("ADMIN_PRODUCTS_TYPE_OTHER", "Outros")
+      : t("ADMIN_PRODUCTS_TYPE_FLAVOR", "Sabor");
 
   const toggleActive = useMutation({
     mutationFn: async () => {
@@ -471,10 +499,13 @@ function ProductCard({ product, onEdit }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success(
-        product.isActive ? "Produto desativado" : "Produto reativado",
+        product.isActive
+          ? t("ADMIN_PRODUCTS_DISABLED", "Produto desativado")
+          : t("ADMIN_PRODUCTS_RESTORED", "Produto reativado"),
       );
     },
-    onError: () => toast.error("Falha ao alterar status"),
+    onError: () =>
+      toast.error(t("ADMIN_PRODUCTS_STATUS_ERROR", "Falha ao alterar status")),
   });
 
   return (
@@ -516,7 +547,9 @@ function ProductCard({ product, onEdit }) {
               : "bg-gray-200 text-smoke"
           }`}
         >
-          {product.isActive ? "Ativo" : "Inativo"}
+          {product.isActive
+            ? t("ADMIN_PRODUCTS_ACTIVE", "Ativo")
+            : t("ADMIN_PRODUCTS_INACTIVE", "Inativo")}
         </span>
       </div>
 
@@ -538,7 +571,8 @@ function ProductCard({ product, onEdit }) {
             key={s.size}
             className="rounded-xl bg-gold/10 px-2 py-0.5 text-xs text-gold"
           >
-            {SIZE_LABEL[s.size]} R$ {Number(s.price).toFixed(2)}
+            {t(`SIZE_${s.size}`, SIZE_LABEL[s.size])} R${" "}
+            {Number(s.price).toFixed(2)}
           </span>
         ))}
       </div>
@@ -549,7 +583,7 @@ function ProductCard({ product, onEdit }) {
           onClick={() => onEdit(product)}
           className="flex-1 rounded-2xl border border-gold/30 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
         >
-          Editar
+          {t("EDIT", "Editar")}
         </button>
         <button
           type="button"
@@ -561,7 +595,9 @@ function ProductCard({ product, onEdit }) {
               : "border-green-500/30 text-green-400 hover:bg-green-500/10"
           } disabled:opacity-50`}
         >
-          {product.isActive ? "Desativar" : "Reativar"}
+          {product.isActive
+            ? t("ADMIN_PRODUCTS_DISABLE", "Desativar")
+            : t("ADMIN_PRODUCTS_RESTORE", "Reativar")}
         </button>
       </div>
     </article>
@@ -569,6 +605,7 @@ function ProductCard({ product, onEdit }) {
 }
 
 function AdminProductsPage() {
+  const { t } = useTranslation();
   const [modal, setModal] = useState(null); // null | "new" | product object
 
   const {
@@ -593,9 +630,14 @@ function AdminProductsPage() {
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 text-gray-900 sm:px-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl text-gold">Produtos</h1>
+          <h1 className="font-display text-3xl text-gold">
+            {t("ADMIN_PRODUCTS_TITLE", "Produtos")}
+          </h1>
           <p className="mt-1 text-sm text-smoke">
-            Gerencie o cardápio da Pizzaria Fellice
+            {t(
+              "ADMIN_PRODUCTS_SUBTITLE",
+              "Gerencie o cardápio da Pizzaria Fellice",
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -603,14 +645,14 @@ function AdminProductsPage() {
             to="/admin"
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm transition hover:border-gold/30"
           >
-            Painel
+            {t("NAV_PAINEL", "Painel")}
           </Link>
           <button
             type="button"
             onClick={() => setModal("new")}
             className="rounded-2xl bg-gradient-to-r from-ember to-red-500 px-4 py-2 text-sm font-bold text-gray-900 transition hover:opacity-90"
           >
-            + Novo Produto
+            + {t("ADMIN_PRODUCTS_NEW_BUTTON", "Novo Produto")}
           </button>
         </div>
       </header>
@@ -624,14 +666,23 @@ function AdminProductsPage() {
       )}
 
       {isError && (
-        <p className="mt-6 text-sm text-red-300">Falha ao carregar produtos.</p>
+        <p className="mt-6 text-sm text-red-300">
+          {t("ADMIN_PRODUCTS_LOAD_ERROR", "Falha ao carregar produtos.")}
+        </p>
       )}
 
       {!isLoading && !isError && (
         <>
           <p className="mt-4 text-xs text-smoke">
-            {products.filter((p) => p.isActive).length} ativos ·{" "}
-            {products.filter((p) => !p.isActive).length} inativos
+            {t("ADMIN_PRODUCTS_ACTIVE_COUNT", "{{count}} ativos").replace(
+              "{{count}}",
+              String(products.filter((p) => p.isActive).length),
+            )}
+            {" · "}
+            {t("ADMIN_PRODUCTS_INACTIVE_COUNT", "{{count}} inativos").replace(
+              "{{count}}",
+              String(products.filter((p) => !p.isActive).length),
+            )}
           </p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
@@ -643,7 +694,7 @@ function AdminProductsPage() {
             ))}
             {products.length === 0 && (
               <div className="col-span-full rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-smoke">
-                Nenhum produto cadastrado ainda.
+                {t("ADMIN_PRODUCTS_EMPTY", "Nenhum produto cadastrado ainda.")}
               </div>
             )}
           </div>

@@ -18,6 +18,7 @@ import {
   getStaffUnreadCount,
   subscribeToStaffUnreadCount,
 } from "../lib/staffAlertsStore.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const SOUND_STORAGE_KEY = "pc_kitchen_sound_enabled";
 const NEW_ORDER_HIGHLIGHT_MS = 20000;
@@ -114,6 +115,7 @@ function OrderCard({
   onConfirmDelivery,
   confirmingDelivery,
 }) {
+  const { t } = useTranslation();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
   const stage = STAGES.find((s) => s.key === order.status);
@@ -127,16 +129,16 @@ function OrderCard({
   const isPaymentPending = order.paymentStatus === "PENDENTE";
 
   const advanceLabel = advancing
-    ? "Atualizando..."
+    ? t("KITCHEN_UPDATING", "Atualizando...")
     : order.mesaId && order.status === "NO_FORNO"
-      ? "Levar para a Mesa"
+      ? t("KITCHEN_ADVANCE_TO_TABLE", "Levar para a Mesa")
       : order.mesaId && order.status === "SAIU_PARA_ENTREGA"
-        ? "Entregue na Mesa"
+        ? t("KITCHEN_DELIVERED_AT_TABLE", "Entregue na Mesa")
         : order.isPickup && order.status === "NO_FORNO"
-          ? "Pronto p/ Retirada"
+          ? t("KITCHEN_READY_PICKUP", "Pronto p/ Retirada")
           : order.isPickup && order.status === "SAIU_PARA_ENTREGA"
-            ? "Marcar Retirado"
-            : NEXT_LABEL[order.status];
+            ? t("KITCHEN_MARK_PICKED_UP", "Marcar Retirado")
+            : t(`KITCHEN_NEXT_${order.status}`, NEXT_LABEL[order.status]);
 
   return (
     <article
@@ -157,7 +159,9 @@ function OrderCard({
             #{order.id.slice(-6).toUpperCase()}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-gray-900">
-            {order.mesa ? order.mesa.name : (order.user?.name ?? "Cliente")}
+            {order.mesa
+              ? order.mesa.name
+              : (order.user?.name ?? t("CLIENT_DASHBOARD_CLIENT", "Cliente"))}
           </p>
           <p className="text-xs text-gray-600">{formatTime(order.createdAt)}</p>
         </div>
@@ -179,14 +183,14 @@ function OrderCard({
             }`}
           >
             {order.mesa
-              ? `🪑 Mesa ${order.mesa.number}`
+              ? `🪑 ${t("ADMIN_PANEL_MESA_LABEL", "Mesa")} ${order.mesa.number}`
               : order.isPickup
-                ? "🏠 Retirada"
-                : "🛵 Entrega"}
+                ? `🏠 ${t("KITCHEN_PICKUP", "Retirada")}`
+                : `🛵 ${t("KITCHEN_DELIVERY", "Entrega")}`}
           </span>
           {isPaymentPending && !onConfirmPayment && (
             <span className="rounded-xl bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-              💰 Pag. pendente
+              💰 {t("KITCHEN_PAYMENT_PENDING", "Pag. pendente")}
             </span>
           )}
         </div>
@@ -194,7 +198,7 @@ function OrderCard({
 
       {isFresh ? (
         <div className="mt-3 inline-flex rounded-full border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
-          Novo pedido
+          {t("KITCHEN_NEW_ORDER", "Novo pedido")}
         </div>
       ) : null}
 
@@ -208,12 +212,13 @@ function OrderCard({
           <li key={item.id} className="text-sm">
             {item.type === "MEIO_A_MEIO" ? (
               <span className="text-gold">
-                Meio a Meio — {item.firstHalfProduct?.name ?? "?"} /{" "}
+                {t("CLIENT_DASHBOARD_HALF_HALF", "Meio a Meio")} —{" "}
+                {item.firstHalfProduct?.name ?? "?"} /{" "}
                 {item.secondHalfProduct?.name ?? "?"}
               </span>
             ) : (
               <span className="text-gray-900">
-                {item.product?.name ?? "Pizza"}
+                {item.product?.name ?? t("CLIENT_DASHBOARD_PIZZA", "Pizza")}
               </span>
             )}
             <span className="ml-2 text-xs text-gray-600">
@@ -230,7 +235,7 @@ function OrderCard({
 
       {order.notes && (
         <p className="mt-2 rounded-xl bg-gray-200 px-3 py-1.5 text-xs text-gray-700">
-          Obs: {order.notes}
+          {t("ADMIN_HISTORY_NOTES", "Obs")}: {order.notes}
         </p>
       )}
 
@@ -392,6 +397,7 @@ function OrderCard({
 }
 
 function KitchenPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -720,7 +726,12 @@ function KitchenPage() {
 
     if (newOverdueIds.length && soundEnabled) {
       playKitchenAlertTone("overdue");
-      toast.error(`${newOverdueIds.length} pedido(s) entraram em atraso`);
+      toast.error(
+        t(
+          "KITCHEN_OVERDUE_ALERT",
+          "{{count}} pedido(s) entraram em atraso",
+        ).replace("{{count}}", String(newOverdueIds.length)),
+      );
     }
 
     previousOverdueIdsRef.current = overdueIds;
@@ -761,23 +772,36 @@ function KitchenPage() {
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl text-gold">Cozinha</h1>
+          <h1 className="font-display text-3xl text-gold">
+            {t("KITCHEN_TITLE", "Cozinha")}
+          </h1>
           <p className="mt-1 text-xs text-smoke">
-            Atualizado em {lastUpdate} &bull; tempo real com fallback de 2 min
+            {t(
+              "KITCHEN_UPDATED_AT",
+              "Atualizado em {{time}} • tempo real com fallback de 2 min",
+            ).replace("{{time}}", lastUpdate)}
           </p>
           <p className="mt-1 text-xs text-red-300">
             {overdueCount
-              ? `${overdueCount} pedidos em atraso`
-              : "Sem pedidos em atraso"}
+              ? t(
+                  "KITCHEN_OVERDUE_COUNT",
+                  "{{count}} pedidos em atraso",
+                ).replace("{{count}}", String(overdueCount))
+              : t("KITCHEN_NO_OVERDUE", "Sem pedidos em atraso")}
           </p>
           <p className="mt-1 text-xs text-gold/90">
             {unreadCount
-              ? `${unreadCount} novos alertas nao lidos`
-              : "Nenhum alerta pendente"}
+              ? t(
+                  "KITCHEN_UNREAD_ALERTS",
+                  "{{count}} novos alertas nao lidos",
+                ).replace("{{count}}", String(unreadCount))
+              : t("KITCHEN_NO_ALERTS", "Nenhum alerta pendente")}
           </p>
           <p className="mt-1 text-xs text-smoke">
-            Desktop:{" "}
-            {desktopEnabled ? "notificacoes ativas" : "notificacoes inativas"}
+            {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}:{" "}
+            {desktopEnabled
+              ? t("ADMIN_PANEL_DESKTOP_ON", "notificacoes ativas")
+              : t("ADMIN_PANEL_DESKTOP_OFF", "notificacoes inativas")}
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -786,14 +810,15 @@ function KitchenPage() {
             onClick={handleGoBack}
             className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
           >
-            Voltar
+            {t("BTN_BACK", "Voltar")}
           </button>
           <button
             type="button"
             onClick={() => clearStaffUnreadCount()}
             className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-smoke transition hover:border-gold/30 hover:text-gold"
           >
-            Limpar alertas {unreadCount ? `(${unreadCount})` : ""}
+            {t("KITCHEN_CLEAR_ALERTS", "Limpar alertas")}{" "}
+            {unreadCount ? `(${unreadCount})` : ""}
           </button>
           <button
             type="button"
@@ -804,7 +829,10 @@ function KitchenPage() {
                 : "border-gray-200 bg-gray-50 text-smoke"
             }`}
           >
-            Desktop {desktopEnabled ? "ligado" : "desligado"}
+            {t("ADMIN_PANEL_DESKTOP_LABEL", "Desktop")}{" "}
+            {desktopEnabled
+              ? t("ADMIN_PANEL_DESKTOP_BUTTON_ON", "ligado")
+              : t("ADMIN_PANEL_DESKTOP_BUTTON_OFF", "desligado")}
           </button>
           <button
             type="button"
@@ -815,14 +843,19 @@ function KitchenPage() {
                 : "border-gray-200 bg-gray-50 text-smoke"
             }`}
           >
-            Som {soundEnabled ? "ligado" : "desligado"}
+            {t("KITCHEN_SOUND", "Som")}{" "}
+            {soundEnabled
+              ? t("KITCHEN_ON", "ligado")
+              : t("KITCHEN_OFF", "desligado")}
           </button>
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
             </span>
-            <span className="text-xs text-smoke">Ao vivo</span>
+            <span className="text-xs text-smoke">
+              {t("KITCHEN_LIVE", "Ao vivo")}
+            </span>
           </div>
         </div>
       </header>
@@ -841,12 +874,14 @@ function KitchenPage() {
               }`}
             >
               <p className="text-xs uppercase tracking-[0.2em] text-smoke">
-                {stage.label}
+                {t(`KITCHEN_COLUMN_${stage.key}`, stage.label)}
               </p>
               <p className="mt-2 font-display text-3xl text-gray-900">
                 {stage.count}
               </p>
-              <p className="mt-1 text-xs text-smoke">Pedidos nesta etapa</p>
+              <p className="mt-1 text-xs text-smoke">
+                {t("KITCHEN_ORDERS_IN_STAGE", "Pedidos nesta etapa")}
+              </p>
             </article>
           );
         })}
@@ -856,12 +891,22 @@ function KitchenPage() {
         <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
           <div>
             <p className="font-semibold">
-              Novo pedido #{latestAlert.orderId.slice(-6).toUpperCase()} chegou
-              na fila
+              {t(
+                "KITCHEN_NEW_ORDER_ARRIVED",
+                "Novo pedido {{id}} chegou na fila",
+              ).replace(
+                "{{id}}",
+                `#${latestAlert.orderId.slice(-6).toUpperCase()}`,
+              )}
             </p>
             <p className="text-xs text-gold/80">
-              Destaque ativo por {Math.floor(NEW_ORDER_HIGHLIGHT_MS / 1000)}{" "}
-              segundos.
+              {t(
+                "KITCHEN_HIGHLIGHT_SECONDS",
+                "Destaque ativo por {{seconds}} segundos.",
+              ).replace(
+                "{{seconds}}",
+                String(Math.floor(NEW_ORDER_HIGHLIGHT_MS / 1000)),
+              )}
             </p>
           </div>
           <button
@@ -869,7 +914,7 @@ function KitchenPage() {
             onClick={() => setLatestAlert(null)}
             className="rounded-xl border border-gold/30 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
           >
-            Fechar
+            {t("BTN_CLOSE", "Fechar")}
           </button>
         </div>
       ) : null}
@@ -883,7 +928,9 @@ function KitchenPage() {
       )}
 
       {isError && (
-        <p className="text-sm text-red-300">Falha ao carregar pedidos.</p>
+        <p className="text-sm text-red-300">
+          {t("KITCHEN_LOAD_ERROR", "Falha ao carregar pedidos.")}
+        </p>
       )}
 
       {/* Kanban columns */}
@@ -934,14 +981,20 @@ function KitchenPage() {
 
                 {isDropActive ? (
                   <div className="mb-3 rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-gold">
-                    Solte aqui para mover para {col.label}
+                    {t(
+                      "KITCHEN_DROP_TO_STAGE",
+                      "Solte aqui para mover para {{stage}}",
+                    ).replace(
+                      "{{stage}}",
+                      t(`KITCHEN_COLUMN_${col.key}`, col.label),
+                    )}
                   </div>
                 ) : null}
 
                 <div className="space-y-3">
                   {stageOrders.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/15 p-4 text-center text-xs text-smoke">
-                      Nenhum pedido
+                      {t("KITCHEN_NO_ORDER", "Nenhum pedido")}
                     </div>
                   ) : (
                     stageOrders.map((order) => (
@@ -1015,7 +1068,7 @@ function KitchenPage() {
 
       {!isLoading && !isError && orders.length === 0 && (
         <p className="mt-10 text-center text-smoke">
-          Sem pedidos ativos no momento.
+          {t("KITCHEN_NO_ACTIVE_ORDERS", "Sem pedidos ativos no momento.")}
         </p>
       )}
     </main>

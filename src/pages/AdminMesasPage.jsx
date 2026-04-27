@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const EMPTY_FORM = { name: "", number: "", terminalId: "" };
 
@@ -314,6 +315,7 @@ function MesaCard({ mesa, onEdit, onQr }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 function AdminMesasPage() {
+  const { t } = useTranslation();
   const [modal, setModal] = useState(null); // null | { type: "create"|"edit"|"qr", mesa? }
 
   const {
@@ -335,17 +337,26 @@ function AdminMesasPage() {
           to="/admin"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-800"
         >
-          ← Painel Admin
+          {t("ADMIN_MESAS_BACK_PANEL", "← Painel Admin")}
         </Link>
-        <h1 className="font-display text-3xl text-gold">Mesas</h1>
+        <h1 className="font-display text-3xl text-gold">
+          {t("ADMIN_MESAS_TITLE", "Mesas")}
+        </h1>
       </div>
 
       {/* Como achar o ID da maquininha */}
       <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-        <p className="font-semibold">Como achar o ID da maquininha?</p>
+        <p className="font-semibold">
+          {t("ADMIN_MESAS_HELP_TITLE", "Como achar o ID da maquininha?")}
+        </p>
         <p className="mt-1">
-          No app do Mercado Pago → <strong>Seu negócio → Point</strong> →
-          selecione o dispositivo → copie o ID que aparece (ex:{" "}
+          {t("ADMIN_MESAS_HELP_TEXT_1", "No app do Mercado Pago")} →{" "}
+          <strong>{t("ADMIN_MESAS_HELP_TEXT_2", "Seu negócio → Point")}</strong>{" "}
+          →{" "}
+          {t(
+            "ADMIN_MESAS_HELP_TEXT_3",
+            "selecione o dispositivo → copie o ID que aparece (ex:",
+          )}{" "}
           <code className="font-mono">PAX_A867EC0ED627</code>).
         </p>
       </div>
@@ -354,23 +365,27 @@ function AdminMesasPage() {
         onClick={() => setModal({ type: "create" })}
         className="mb-5 w-full rounded-2xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90"
       >
-        + Nova Mesa
+        + {t("ADMIN_MESAS_NEW_BUTTON", "Nova Mesa")}
       </button>
 
       {isLoading && (
-        <p className="text-center text-sm text-gray-400">Carregando mesas...</p>
+        <p className="text-center text-sm text-gray-400">
+          {t("ADMIN_MESAS_LOADING", "Carregando mesas...")}
+        </p>
       )}
       {isError && (
         <p className="text-center text-sm text-red-400">
-          Falha ao carregar mesas.
+          {t("ADMIN_MESAS_LOAD_ERROR", "Falha ao carregar mesas.")}
         </p>
       )}
 
       {!isLoading && mesas.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
-          Nenhuma mesa cadastrada ainda.
+          {t("ADMIN_MESAS_EMPTY", "Nenhuma mesa cadastrada ainda.")}
           <br />
-          Clique em <strong>+ Nova Mesa</strong> para começar.
+          {t("ADMIN_MESAS_EMPTY_HINT_1", "Clique em")}{" "}
+          <strong>+ {t("ADMIN_MESAS_NEW_BUTTON", "Nova Mesa")}</strong>{" "}
+          {t("ADMIN_MESAS_EMPTY_HINT_2", "para começar.")}
         </div>
       )}
 

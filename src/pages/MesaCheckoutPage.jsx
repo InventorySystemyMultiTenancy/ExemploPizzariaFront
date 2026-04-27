@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -33,6 +34,7 @@ const mapItemToApi = (item) => {
 
 // ── Tela de PIX ───────────────────────────────────────────────────────────────
 function PixScreen({ orderId, total, onClose }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const pixMutation = useMutation({
@@ -59,11 +61,13 @@ function PixScreen({ orderId, total, onClose }) {
 
   useEffect(() => {
     if (polledOrder?.paymentStatus === "APROVADO") {
-      toast.success("Pagamento confirmado! 🍕");
+      toast.success(
+        t("MESA_CHECKOUT_PAYMENT_CONFIRMED", "Pagamento confirmado! 🍕"),
+      );
       queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
       onClose();
     }
-  }, [polledOrder, queryClient, onClose]);
+  }, [polledOrder, queryClient, onClose, t]);
 
   const pix = pixMutation.data?.data?.data;
 
@@ -71,18 +75,20 @@ function PixScreen({ orderId, total, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center">
         <h2 className="font-display text-xl text-gray-900 mb-1">
-          Pagar com PIX
+          {t("MESA_PIX_TITLE", "Pagar com PIX")}
         </h2>
         <p className="text-2xl font-bold text-rosso mb-4">{currency(total)}</p>
 
         {pixMutation.isPending || !pix ? (
           <div className="flex flex-col items-center gap-3 py-6">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-gold border-t-transparent" />
-            <p className="text-xs text-gray-400">Gerando QR Code...</p>
+            <p className="text-xs text-gray-400">
+              {t("MESA_PIX_GENERATING", "Gerando QR Code...")}
+            </p>
           </div>
         ) : pixMutation.isError ? (
           <p className="text-sm text-red-500 py-4">
-            Erro ao gerar PIX. Tente novamente.
+            {t("MESA_PIX_ERROR", "Erro ao gerar PIX. Tente novamente.")}
           </p>
         ) : (
           <>
@@ -90,25 +96,27 @@ function PixScreen({ orderId, total, onClose }) {
               {pix.qrCodeBase64 ? (
                 <img
                   src={`data:image/png;base64,${pix.qrCodeBase64}`}
-                  alt="QR Code PIX"
+                  alt={t("MESA_PIX_QR_ALT", "QR Code PIX")}
                   className="w-48 h-48"
                 />
               ) : (
                 <QRCodeSVG value={pix.qrCode ?? ""} size={192} includeMargin />
               )}
             </div>
-            <p className="text-xs text-gray-400 mb-1">Ou copie o código:</p>
+            <p className="text-xs text-gray-400 mb-1">
+              {t("MESA_PIX_COPY_HINT", "Ou copie o código:")}
+            </p>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(pix.qrCode ?? "");
-                toast.success("Código copiado!");
+                toast.success(t("MESA_PIX_COPIED", "Código copiado!"));
               }}
               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600 hover:border-gray-400 truncate"
             >
-              📋 Copiar código PIX
+              📋 {t("MESA_PIX_COPY_BUTTON", "Copiar código PIX")}
             </button>
             <p className="mt-3 text-xs text-gray-400 animate-pulse">
-              Aguardando confirmação do pagamento...
+              {t("MESA_PIX_WAITING", "Aguardando confirmação do pagamento...")}
             </p>
           </>
         )}
@@ -117,7 +125,7 @@ function PixScreen({ orderId, total, onClose }) {
           onClick={onClose}
           className="mt-4 w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
         >
-          Cancelar
+          {t("BTN_CANCEL", "Cancelar")}
         </button>
       </div>
     </div>
@@ -126,16 +134,20 @@ function PixScreen({ orderId, total, onClose }) {
 
 // ── Tela de maquininha ────────────────────────────────────────────────────────
 function TerminalScreen({ orderId, total, onClose }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [approved, setApproved] = useState(false);
 
   const terminalMutation = useMutation({
     mutationFn: () => api.post("/mesa/payments/terminal", { orderId }),
-    onSuccess: () => toast.success("Cobrança enviada para a maquininha!"),
+    onSuccess: () =>
+      toast.success(
+        t("MESA_TERMINAL_SENT", "Cobrança enviada para a maquininha!"),
+      ),
     onError: (err) =>
       toast.error(
         err?.response?.data?.error?.message ??
-          "Erro ao enviar para maquininha.",
+          t("MESA_TERMINAL_SEND_ERROR", "Erro ao enviar para maquininha."),
       ),
   });
 
@@ -153,18 +165,20 @@ function TerminalScreen({ orderId, total, onClose }) {
   useEffect(() => {
     if (polledTerminalOrder?.paymentStatus === "APROVADO" && !approved) {
       setApproved(true);
-      toast.success("Pagamento confirmado! 🍕");
+      toast.success(
+        t("MESA_CHECKOUT_PAYMENT_CONFIRMED", "Pagamento confirmado! 🍕"),
+      );
       queryClient.invalidateQueries({ queryKey: ["mesa-orders"] });
       onClose();
     }
-  }, [polledTerminalOrder, approved, queryClient, onClose]);
+  }, [polledTerminalOrder, approved, queryClient, onClose, t]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center">
         <p className="text-5xl mb-3">🖲️</p>
         <h2 className="font-display text-xl text-gray-900 mb-1">
-          Pagar na Maquininha
+          {t("MESA_TERMINAL_TITLE", "Pagar na Maquininha")}
         </h2>
         <p className="text-2xl font-bold text-rosso mb-4">{currency(total)}</p>
 
@@ -175,12 +189,15 @@ function TerminalScreen({ orderId, total, onClose }) {
             className="w-full rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {terminalMutation.isPending
-              ? "Enviando..."
-              : "Enviar para maquininha"}
+              ? t("MESA_TERMINAL_SENDING", "Enviando...")
+              : t("MESA_TERMINAL_SEND_BUTTON", "Enviar para maquininha")}
           </button>
         ) : (
           <p className="text-sm text-green-600 font-semibold animate-pulse py-2">
-            Aguardando pagamento na maquininha...
+            {t(
+              "MESA_TERMINAL_WAITING",
+              "Aguardando pagamento na maquininha...",
+            )}
           </p>
         )}
 
@@ -188,7 +205,7 @@ function TerminalScreen({ orderId, total, onClose }) {
           onClick={onClose}
           className="mt-3 w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
         >
-          Cancelar
+          {t("BTN_CANCEL", "Cancelar")}
         </button>
       </div>
     </div>
@@ -197,6 +214,7 @@ function TerminalScreen({ orderId, total, onClose }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 function MesaCheckoutPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { items, subtotal, clearCart } = useCart();
   const [notes, setNotes] = useState("");
@@ -216,11 +234,14 @@ function MesaCheckoutPage() {
       setCreatedOrderId(order.id);
       setCreatedOrderTotal(Number(order.total));
       clearCart();
-      toast.success("Pedido enviado para a cozinha!");
+      toast.success(
+        t("MESA_CHECKOUT_ORDER_SENT", "Pedido enviado para a cozinha!"),
+      );
     },
     onError: (err) => {
       toast.error(
-        err?.response?.data?.error?.message ?? "Erro ao fazer pedido.",
+        err?.response?.data?.error?.message ??
+          t("MESA_CHECKOUT_ORDER_ERROR", "Erro ao fazer pedido."),
       );
     },
   });
@@ -246,18 +267,20 @@ function MesaCheckoutPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
         <p className="text-4xl">🛒</p>
-        <p className="text-gray-500 text-sm">Seu carrinho está vazio.</p>
+        <p className="text-gray-500 text-sm">
+          {t("CHECKOUT_EMPTY", "Seu carrinho está vazio.")}
+        </p>
         <a
           href="/cardapio"
           className="mt-2 rounded-xl bg-rosso px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90"
         >
-          Ver cardápio
+          {t("MESA_CHECKOUT_VIEW_MENU", "Ver cardápio")}
         </a>
 
         {mesaOrders.length > 0 && (
           <div className="mt-6 w-full max-w-sm">
             <p className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Pedidos desta sessão
+              {t("MESA_CHECKOUT_SESSION_ORDERS", "Pedidos desta sessão")}
             </p>
             <div className="space-y-2">
               {mesaOrders.map((o) => (
@@ -275,8 +298,8 @@ function MesaCheckoutPage() {
                       }`}
                     >
                       {o.paymentStatus === "APROVADO"
-                        ? "✅ Pago"
-                        : "⏳ Pendente"}
+                        ? `✅ ${t("PAYMENT_STATUS_APROVADO", "Pago")}`
+                        : `⏳ ${t("PAYMENT_STATUS_PENDENTE", "Pendente")}`}
                     </span>
                   </div>
                 </div>
@@ -286,19 +309,20 @@ function MesaCheckoutPage() {
             {totalPendente > 0 && (
               <div className="mt-4 space-y-2">
                 <p className="text-sm font-bold text-gray-900">
-                  Total pendente: {currency(totalPendente)}
+                  {t("MESA_CHECKOUT_PENDING_TOTAL", "Total pendente")}:{" "}
+                  {currency(totalPendente)}
                 </p>
                 <button
                   onClick={() => setPayScreen("pix")}
                   className="w-full rounded-xl bg-blue-500 py-3 text-sm font-semibold text-white hover:opacity-90"
                 >
-                  Pagar com PIX
+                  {t("MESA_PIX_TITLE", "Pagar com PIX")}
                 </button>
                 <button
                   onClick={() => setPayScreen("terminal")}
                   className="w-full rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90"
                 >
-                  Pagar na Maquininha
+                  {t("MESA_TERMINAL_TITLE", "Pagar na Maquininha")}
                 </button>
               </div>
             )}
@@ -330,17 +354,17 @@ function MesaCheckoutPage() {
           href="/cardapio"
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 hover:border-gray-400"
         >
-          ← Cardápio
+          {t("MESA_CHECKOUT_BACK_MENU", "← Cardápio")}
         </a>
         <h1 className="font-display text-2xl text-gold">
-          {user?.name} — Mesa {user?.mesaNumber}
+          {user?.name} — {t("MESA_CHECKOUT_TABLE", "Mesa")} {user?.mesaNumber}
         </h1>
       </div>
 
       {/* Itens */}
       <div className="rounded-3xl border border-gold/20 bg-white p-4 space-y-3 mb-4">
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-          Seu pedido
+          {t("MESA_CHECKOUT_YOUR_ORDER", "Seu pedido")}
         </p>
         {items.map((item) => (
           <div key={item.key} className="flex justify-between text-sm">
@@ -356,7 +380,7 @@ function MesaCheckoutPage() {
           </div>
         ))}
         <div className="border-t border-gray-100 pt-2 flex justify-between font-bold">
-          <span>Total</span>
+          <span>{t("CART_TOTAL", "Total")}</span>
           <span>
             {createdOrderId ? currency(createdOrderTotal) : currency(subtotal)}
           </span>
@@ -366,12 +390,15 @@ function MesaCheckoutPage() {
       {/* Observações */}
       <div className="mb-4">
         <label className="mb-1 block text-xs font-semibold text-gray-600">
-          Observações (opcional)
+          {t("MESA_CHECKOUT_NOTES_LABEL", "Observações (opcional)")}
         </label>
         <textarea
           rows={2}
           maxLength={500}
-          placeholder="Ex: sem cebola, massa fina..."
+          placeholder={t(
+            "MESA_CHECKOUT_NOTES_PLACEHOLDER",
+            "Ex: sem cebola, massa fina...",
+          )}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gold/60 focus:outline-none resize-none"
@@ -386,8 +413,8 @@ function MesaCheckoutPage() {
           className="w-full rounded-2xl bg-rosso py-4 text-base font-bold text-white hover:opacity-90 disabled:opacity-50 mb-3"
         >
           {orderMutation.isPending
-            ? "Enviando..."
-            : `Confirmar pedido • ${currency(subtotal)}`}
+            ? t("MESA_CHECKOUT_SENDING", "Enviando...")
+            : `${t("MESA_CHECKOUT_CONFIRM_ORDER", "Confirmar pedido")} • ${currency(subtotal)}`}
         </button>
       )}
 
@@ -395,25 +422,27 @@ function MesaCheckoutPage() {
       {createdOrderId && (
         <div className="rounded-3xl border border-green-100 bg-green-50 p-5 text-center space-y-3">
           <p className="text-green-700 font-semibold text-sm">
-            ✅ Pedido enviado para a cozinha!
+            ✅ {t("MESA_CHECKOUT_ORDER_SENT", "Pedido enviado para a cozinha!")}
           </p>
-          <p className="text-xs text-gray-500">Deseja pagar agora?</p>
+          <p className="text-xs text-gray-500">
+            {t("MESA_CHECKOUT_PAY_NOW", "Deseja pagar agora?")}
+          </p>
           <div className="flex gap-3">
             <button
               onClick={() => setPayScreen("pix")}
               className="flex-1 rounded-xl bg-blue-500 py-3 text-sm font-semibold text-white hover:opacity-90"
             >
-              PIX
+              {t("MESA_CHECKOUT_PIX_SHORT", "PIX")}
             </button>
             <button
               onClick={() => setPayScreen("terminal")}
               className="flex-1 rounded-xl bg-rosso py-3 text-sm font-semibold text-white hover:opacity-90"
             >
-              Maquininha
+              {t("MESA_CHECKOUT_TERMINAL_SHORT", "Maquininha")}
             </button>
           </div>
           <a href="/cardapio" className="block text-xs text-gray-400 underline">
-            Pagar depois
+            {t("MESA_CHECKOUT_PAY_LATER", "Pagar depois")}
           </a>
         </div>
       )}

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { api } from "../lib/api.js";
+import { useTranslation } from "../context/I18nContext.jsx";
 
 const currency = (v) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -45,6 +46,7 @@ const getWazeUrl = (order) => {
 };
 
 function MotoboyPage() {
+  const { t } = useTranslation();
   const [deliveryCodes, setDeliveryCodes] = useState({});
   const [confirmingByOrderId, setConfirmingByOrderId] = useState({});
   const [markingPaidByOrderId, setMarkingPaidByOrderId] = useState({});
@@ -65,12 +67,17 @@ function MotoboyPage() {
     try {
       await api.post(`/orders/${orderId}/confirm-delivery`, { code });
       setDeliveryCodes((prev) => ({ ...prev, [orderId]: "" }));
-      toast.success("Entrega confirmada com sucesso.");
+      toast.success(
+        t("MOTOBOY_DELIVERY_CONFIRMED", "Entrega confirmada com sucesso."),
+      );
       refetch();
     } catch (error) {
       const message =
         error?.response?.data?.message ??
-        "Não foi possível confirmar a entrega.";
+        t(
+          "MOTOBOY_DELIVERY_CONFIRM_ERROR",
+          "Não foi possível confirmar a entrega.",
+        );
       toast.error(message);
     } finally {
       setConfirmingByOrderId((prev) => ({ ...prev, [orderId]: false }));
@@ -79,12 +86,18 @@ function MotoboyPage() {
 
   const handleMarkAsPaid = async (orderId) => {
     const confirmResult = await Swal.fire({
-      title: "Confirmar pagamento?",
-      text: "Marque como pago somente após receber o valor do cliente.",
+      title: t("MOTOBOY_CONFIRM_PAYMENT_TITLE", "Confirmar pagamento?"),
+      text: t(
+        "MOTOBOY_CONFIRM_PAYMENT_TEXT",
+        "Marque como pago somente após receber o valor do cliente.",
+      ),
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Sim, marcar como pago",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: t(
+        "MOTOBOY_CONFIRM_PAYMENT_YES",
+        "Sim, marcar como pago",
+      ),
+      cancelButtonText: t("BTN_CANCEL", "Cancelar"),
       confirmButtonColor: "#0f172a",
     });
 
@@ -96,12 +109,17 @@ function MotoboyPage() {
 
     try {
       await api.patch(`/orders/${orderId}/mark-paid`);
-      toast.success("Pagamento marcado como aprovado.");
+      toast.success(
+        t("MOTOBOY_PAYMENT_MARKED", "Pagamento marcado como aprovado."),
+      );
       refetch();
     } catch (error) {
       const message =
         error?.response?.data?.message ??
-        "Não foi possível confirmar o pagamento.";
+        t(
+          "MOTOBOY_PAYMENT_CONFIRM_ERROR",
+          "Não foi possível confirmar o pagamento.",
+        );
       toast.error(message);
     } finally {
       setMarkingPaidByOrderId((prev) => ({ ...prev, [orderId]: false }));
@@ -114,24 +132,29 @@ function MotoboyPage() {
     <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-gray-900">
-          🛵 Entregas
+          🛵 {t("MOTOBOY_TITLE", "Entregas")}
         </h1>
         <button
           type="button"
           onClick={() => refetch()}
           className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-gray-400"
         >
-          Atualizar
+          {t("MOTOBOY_REFRESH", "Atualizar")}
         </button>
       </div>
 
       {isLoading && (
-        <p className="mt-8 text-center text-sm text-gray-500">Carregando...</p>
+        <p className="mt-8 text-center text-sm text-gray-500">
+          {t("MOTOBOY_LOADING", "Carregando...")}
+        </p>
       )}
 
       {isError && (
         <p className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Erro ao carregar pedidos. Tente atualizar.
+          {t(
+            "MOTOBOY_LOAD_ERROR",
+            "Erro ao carregar pedidos. Tente atualizar.",
+          )}
         </p>
       )}
 
@@ -139,10 +162,16 @@ function MotoboyPage() {
         <div className="mt-12 text-center">
           <p className="text-4xl">🍕</p>
           <p className="mt-3 text-sm font-semibold text-gray-500">
-            Nenhum pedido pronto para entrega no momento.
+            {t(
+              "MOTOBOY_EMPTY",
+              "Nenhum pedido pronto para entrega no momento.",
+            )}
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Esta página atualiza automaticamente a cada 20 segundos.
+            {t(
+              "MOTOBOY_AUTO_REFRESH_HINT",
+              "Esta página atualiza automaticamente a cada 20 segundos.",
+            )}
           </p>
         </div>
       )}
@@ -158,12 +187,14 @@ function MotoboyPage() {
               <div>
                 <p className="font-bold text-gray-900">{order.user?.name}</p>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  Pedido #{order.id.slice(-8).toUpperCase()}
+                  {t("MOTOBOY_ORDER_PREFIX", "Pedido")} #
+                  {order.id.slice(-8).toUpperCase()}
                 </p>
               </div>
               {order.deliveryFee != null && (
                 <span className="shrink-0 rounded-xl bg-green-100 px-3 py-1 text-sm font-bold text-green-800">
-                  Frete {currency(order.deliveryFee)}
+                  {t("MOTOBOY_DELIVERY_FEE", "Frete")}{" "}
+                  {currency(order.deliveryFee)}
                 </span>
               )}
             </div>
@@ -183,7 +214,9 @@ function MotoboyPage() {
 
             {/* Address */}
             <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-              <p className="text-xs font-semibold text-gray-500">Endereço</p>
+              <p className="text-xs font-semibold text-gray-500">
+                {t("MOTOBOY_ADDRESS", "Endereço")}
+              </p>
               <p className="mt-1 text-sm text-gray-800">
                 {order.deliveryAddress}
               </p>
@@ -191,7 +224,9 @@ function MotoboyPage() {
 
             {/* Total */}
             <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-gray-500">Total do pedido</span>
+              <span className="text-gray-500">
+                {t("MOTOBOY_ORDER_TOTAL", "Total do pedido")}
+              </span>
               <span className="font-bold text-gray-900">
                 {currency(order.total)}
               </span>
@@ -201,12 +236,15 @@ function MotoboyPage() {
             <div className="mt-3 flex justify-end">
               {order.paymentStatus === "APROVADO" ? (
                 <span className="rounded-xl bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-                  Já pago
+                  {t("MOTOBOY_ALREADY_PAID", "Já pago")}
                 </span>
               ) : (
                 <div className="flex items-center gap-2">
                   <span className="rounded-xl bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                    Cobrar cliente na entrega
+                    {t(
+                      "MOTOBOY_COLLECT_ON_DELIVERY",
+                      "Cobrar cliente na entrega",
+                    )}
                   </span>
                   <button
                     type="button"
@@ -215,8 +253,8 @@ function MotoboyPage() {
                     className="rounded-xl bg-emerald-700 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {markingPaidByOrderId[order.id]
-                      ? "Salvando..."
-                      : "Marcar como pago"}
+                      ? t("MOTOBOY_SAVING", "Salvando...")
+                      : t("MOTOBOY_MARK_PAID", "Marcar como pago")}
                   </button>
                 </div>
               )}
@@ -238,7 +276,7 @@ function MotoboyPage() {
                   >
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
-                  Google Maps
+                  {t("MOTOBOY_GOOGLE_MAPS", "Google Maps")}
                 </a>
                 <a
                   href={getWazeUrl(order)}
@@ -253,7 +291,7 @@ function MotoboyPage() {
                   >
                     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm0 2c5.5 0 10 4.5 10 10S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2zm-.8 5v5.2l4 2.4-.8 1.2-4.7-2.8V7h1.5z" />
                   </svg>
-                  Waze
+                  {t("MOTOBOY_WAZE", "Waze")}
                 </a>
               </div>
             ) : (
@@ -264,7 +302,10 @@ function MotoboyPage() {
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
                 >
-                  Buscar endereço no Google Maps
+                  {t(
+                    "MOTOBOY_SEARCH_ADDRESS",
+                    "Buscar endereço no Google Maps",
+                  )}
                 </a>
               </div>
             )}
@@ -273,7 +314,10 @@ function MotoboyPage() {
             {order.paymentStatus === "APROVADO" ? (
               <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
                 <p className="text-xs font-semibold text-gray-600">
-                  Confirmar entrega com código
+                  {t(
+                    "MOTOBOY_CONFIRM_DELIVERY_CODE",
+                    "Confirmar entrega com código",
+                  )}
                 </p>
                 <div className="mt-2 flex gap-2">
                   <input
@@ -290,7 +334,7 @@ function MotoboyPage() {
                         [order.id]: digitsOnly,
                       }));
                     }}
-                    placeholder="Ex.: 1234"
+                    placeholder={t("MOTOBOY_CODE_PLACEHOLDER", "Ex.: 1234")}
                     className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
                   />
                   <button
@@ -303,15 +347,18 @@ function MotoboyPage() {
                     className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {confirmingByOrderId[order.id]
-                      ? "Confirmando..."
-                      : "Confirmar"}
+                      ? t("MOTOBOY_CONFIRMING", "Confirmando...")
+                      : t("MOTOBOY_CONFIRM", "Confirmar")}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2">
                 <p className="text-xs font-medium text-amber-700">
-                  Para confirmar a entrega, marque o pedido como pago primeiro.
+                  {t(
+                    "MOTOBOY_MARK_PAID_FIRST",
+                    "Para confirmar a entrega, marque o pedido como pago primeiro.",
+                  )}
                 </p>
               </div>
             )}
