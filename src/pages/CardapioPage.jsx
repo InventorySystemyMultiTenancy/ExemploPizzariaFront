@@ -244,6 +244,11 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
   const brotPrice = product.sizes?.find((s) => s.size === "PEQUENA");
   const grandePrice = product.sizes?.find((s) => s.size === "GRANDE");
 
+  const productName = t(`PRODUCT_${product.id}_NAME`, product.name);
+  const productDesc = product.description
+    ? t(`PRODUCT_${product.id}_DESC`, product.description)
+    : null;
+
   return (
     <>
       <article
@@ -253,7 +258,7 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
         {product.imageUrl ? (
           <img
             src={product.imageUrl}
-            alt={product.name}
+            alt={productName}
             className="h-28 w-28 shrink-0 object-cover sm:w-36"
             onError={(e) => (e.currentTarget.style.display = "none")}
           />
@@ -266,11 +271,11 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
         <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
           <div>
             <h3 className="font-display text-sm font-bold uppercase tracking-wide text-gray-900 line-clamp-1 sm:text-[0.92rem]">
-              {product.name}
+              {productName}
             </h3>
-            {product.description && (
+            {productDesc && (
               <p className="mt-1 text-xs leading-relaxed text-gray-500 line-clamp-2">
-                {product.description}
+                {productDesc}
               </p>
             )}
           </div>
@@ -279,7 +284,7 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
             {brotPrice && (
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                  Broto
+                  {t("SIZE_BROTO", "Broto")}
                 </p>
                 <p className="text-sm font-bold text-gray-800">
                   {fmt(brotPrice.price)}
@@ -289,7 +294,7 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
             {grandePrice && (
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                  Grande
+                  {t("SIZE_GRANDE", "Grande")}
                 </p>
                 <p className="text-sm font-bold text-gray-800">
                   {fmt(grandePrice.price)}
@@ -371,17 +376,31 @@ function CardapioPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const tCategory = (cat) => {
+    const key = `CAT_${(cat ?? "GERAL")
+      .toUpperCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^A-Z0-9_]/g, "")}`;
+    return t(key, cat ?? "Geral");
+  };
+
+  const rawCategories = Array.from(
+    new Set(
+      products
+        .filter((product) => !product.isCrust)
+        .map((p) => p.category ?? "Geral")
+        .filter(Boolean),
+    ),
+  );
+
   const categories = [
     t("CARDAPIO_CAT_ALL", "Todos"),
-    ...Array.from(
-      new Set(
-        products
-          .filter((product) => !product.isCrust)
-          .map((p) => p.category ?? "Geral")
-          .filter(Boolean),
-      ),
-    ),
+    ...rawCategories.map(tCategory),
   ];
+
+  const categoryKeyMap = Object.fromEntries(
+    rawCategories.map((cat) => [tCategory(cat), cat]),
+  );
 
   const flavorProducts = products.filter((product) => !product.isCrust);
   const normalizedSearch = search.trim().toLowerCase();
@@ -390,7 +409,9 @@ function CardapioPage() {
     activeCategory === ALL_LABEL || activeCategory === "Todos"
       ? flavorProducts
       : flavorProducts.filter(
-          (p) => (p.category ?? "Geral") === activeCategory,
+          (p) =>
+            (p.category ?? "Geral") ===
+            (categoryKeyMap[activeCategory] ?? activeCategory),
         );
   const searched = normalizedSearch
     ? filtered.filter((product) =>
@@ -455,10 +476,13 @@ function CardapioPage() {
         {pendingHalf && (
           <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
             <p className="text-sm text-amber-900">
-              Primeira metade selecionada:{" "}
+              {t("FIRST_HALF_SELECTED_MSG", "Primeira metade selecionada:")}{" "}
               <strong>{pendingHalf.productName}</strong> (
-              {SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}). Escolha a
-              próxima pizza para completar.
+              {SIZE_MAP[pendingHalf.size] ?? pendingHalf.size}).{" "}
+              {t(
+                "FIRST_HALF_CHOOSE_NEXT",
+                "Escolha a próxima pizza para completar.",
+              )}
             </p>
             <button
               type="button"
@@ -478,14 +502,14 @@ function CardapioPage() {
             <div className="mb-4 flex items-end justify-between gap-3">
               <div>
                 <p className="font-display text-[0.65rem] uppercase tracking-[0.35em] text-gold">
-                  Favoritas da casa
+                  {t("CARDAPIO_TOP_LABEL", "Favoritas da casa")}
                 </p>
                 <h2 className="mt-1 font-display text-2xl text-gray-900">
-                  Mais Pedidas
+                  {t("CARDAPIO_TOP_TITLE", "Mais Pedidas")}
                 </h2>
               </div>
               <p className="text-xs text-gray-400">
-                Os sabores que mais saem no momento
+                {t("CARDAPIO_TOP_DESC", "Os sabores que mais saem no momento")}
               </p>
             </div>
 
