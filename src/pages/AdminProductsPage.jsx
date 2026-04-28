@@ -120,6 +120,13 @@ function normalizeCategoryKey(cat) {
     .replace(/[^A-Z0-9_]/g, "")}`;
 }
 
+function tProductField(t, productId, field, fallback) {
+  const id = String(productId ?? "");
+  const lowerKey = `PRODUCT_${id}_${field}`;
+  const upperKey = `PRODUCT_${id.toUpperCase()}_${field}`;
+  return t(lowerKey, t(upperKey, fallback));
+}
+
 async function postI18n(chave, valor, idioma) {
   try {
     const res = await fetch(`${I18N_URL}/traducoes`, {
@@ -669,9 +676,9 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 function ProductCard({ product, onEdit }) {
   const { t, locale, refreshTranslations } = useTranslation();
   const queryClient = useQueryClient();
-  const productName = t(`PRODUCT_${product.id}_NAME`, product.name);
+  const productName = tProductField(t, product.id, "NAME", product.name);
   const productDescription = product.description
-    ? t(`PRODUCT_${product.id}_DESC`, product.description)
+    ? tProductField(t, product.id, "DESC", product.description)
     : null;
   const translatedCategory = product.category
     ? t(normalizeCategoryKey(product.category), product.category)

@@ -20,10 +20,21 @@ const fmt = (value) =>
     currency: "BRL",
   });
 
+function tProductField(t, productId, field, fallback) {
+  const id = String(productId ?? "");
+  const lowerKey = `PRODUCT_${id}_${field}`;
+  const upperKey = `PRODUCT_${id.toUpperCase()}_${field}`;
+  return t(lowerKey, t(upperKey, fallback));
+}
+
 /* ─── Size Picker Modal ─────────────────────────────────────── */
 function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
   const { addItem, openCart } = useCart();
   const { t } = useTranslation();
+  const productName = tProductField(t, product.id, "NAME", product.name);
+  const productDesc = product.description
+    ? tProductField(t, product.id, "DESC", product.description)
+    : null;
   const SIZE_MAP = {
     PEQUENA: t("SIZE_BROTO", "Broto"),
     GRANDE: t("SIZE_GRANDE", "Grande"),
@@ -57,7 +68,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
     if (selectedMode === "INTEIRA") {
       addItem({
         key: `${product.id}-${selectedSize}`,
-        title: product.name,
+        title: productName,
         description: `${SIZE_MAP[selectedSize] ?? selectedSize}`,
         basePrice: Number(selectedEntry.price),
         price: Number(selectedEntry.price),
@@ -77,7 +88,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
     if (!pendingHalf) {
       onSetPendingHalf({
         productId: product.id,
-        productName: product.name,
+        productName,
         size: selectedSize,
         price: selectedPrice,
       });
@@ -97,7 +108,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
     }
 
     const flavorIds = [pendingHalf.productId, product.id];
-    const flavorNames = [pendingHalf.productName, product.name];
+    const flavorNames = [pendingHalf.productName, productName];
     const flavorKey = [...flavorIds].sort().join("-");
     const finalPrice = Math.max(pendingHalf.price, selectedPrice);
 
@@ -135,7 +146,7 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
           {product.imageUrl ? (
             <img
               src={product.imageUrl}
-              alt={product.name}
+              alt={productName}
               className="h-20 w-20 shrink-0 rounded-2xl object-cover"
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
@@ -146,11 +157,11 @@ function SizePickerModal({ product, pendingHalf, onSetPendingHalf, onClose }) {
           )}
           <div className="min-w-0">
             <h3 className="font-display text-lg font-bold leading-tight text-gray-900">
-              {product.name}
+              {productName}
             </h3>
-            {product.description && (
+            {productDesc && (
               <p className="mt-1 text-xs leading-relaxed text-gray-500 line-clamp-2">
-                {product.description}
+                {productDesc}
               </p>
             )}
           </div>
@@ -244,9 +255,9 @@ function MenuCard({ product, pendingHalf, onSetPendingHalf }) {
   const brotPrice = product.sizes?.find((s) => s.size === "PEQUENA");
   const grandePrice = product.sizes?.find((s) => s.size === "GRANDE");
 
-  const productName = t(`PRODUCT_${product.id}_NAME`, product.name);
+  const productName = tProductField(t, product.id, "NAME", product.name);
   const productDesc = product.description
-    ? t(`PRODUCT_${product.id}_DESC`, product.description)
+    ? tProductField(t, product.id, "DESC", product.description)
     : null;
 
   return (
