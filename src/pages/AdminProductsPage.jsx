@@ -177,7 +177,7 @@ async function saveProductTranslations(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
-  const { t, locale } = useTranslation();
+  const { t, locale, refreshTranslations } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
   const [translationBaseLocale, setTranslationBaseLocale] = useState(() =>
@@ -246,7 +246,9 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           saved.description,
           saved.category,
           translationBaseLocale,
-        );
+        ).then(() => {
+          refreshTranslations?.();
+        });
       }
       onClose();
     },
@@ -665,8 +667,15 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 }
 
 function ProductCard({ product, onEdit }) {
-  const { t, locale } = useTranslation();
+  const { t, locale, refreshTranslations } = useTranslation();
   const queryClient = useQueryClient();
+  const productName = t(`PRODUCT_${product.id}_NAME`, product.name);
+  const productDescription = product.description
+    ? t(`PRODUCT_${product.id}_DESC`, product.description)
+    : null;
+  const translatedCategory = product.category
+    ? t(normalizeCategoryKey(product.category), product.category)
+    : null;
   const productTypeLabel = product.isCrust
     ? t("ADMIN_PRODUCTS_TYPE_CRUST", "Borda recheada")
     : (product.sizes?.length ?? 0) <= 1
@@ -709,6 +718,7 @@ function ProductCard({ product, onEdit }) {
       return summary;
     },
     onSuccess: ({ succeeded, failed }) => {
+      refreshTranslations?.();
       if (failed > 0) {
         toast.success(
           t(
@@ -748,7 +758,7 @@ function ProductCard({ product, onEdit }) {
       {product.imageUrl ? (
         <img
           src={product.imageUrl}
-          alt={product.name}
+          alt={productName}
           className="mb-3 h-32 w-full rounded-xl object-cover"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
@@ -761,11 +771,11 @@ function ProductCard({ product, onEdit }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate font-semibold text-gray-900">
-            {product.name}
+            {productName}
           </h3>
-          {product.description && (
+          {productDescription && (
             <p className="mt-0.5 line-clamp-2 text-xs text-smoke">
-              {product.description}
+              {productDescription}
             </p>
           )}
         </div>
@@ -786,9 +796,9 @@ function ProductCard({ product, onEdit }) {
         <span className="rounded-xl bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
           {productTypeLabel}
         </span>
-        {product.category ? (
+        {translatedCategory ? (
           <span className="rounded-xl bg-gray-200 px-2 py-0.5 text-xs text-smoke">
-            {product.category}
+            {translatedCategory}
           </span>
         ) : null}
       </div>

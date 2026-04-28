@@ -177,8 +177,33 @@ export function I18nProvider({ children }) {
     [translations],
   );
 
+  const refreshTranslations = useCallback(async () => {
+    try {
+      const data = await fetchTranslations(locale);
+      writeCache(locale, data);
+
+      setTranslations(data.traducoes || {});
+      const dir = data.direcao || "ltr";
+      setDirection(dir);
+      document.documentElement.setAttribute("dir", dir);
+      document.documentElement.setAttribute("lang", locale);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [locale]);
+
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t, direction, loading }}>
+    <I18nContext.Provider
+      value={{
+        locale,
+        setLocale,
+        t,
+        direction,
+        loading,
+        refreshTranslations,
+      }}
+    >
       {children}
     </I18nContext.Provider>
   );
