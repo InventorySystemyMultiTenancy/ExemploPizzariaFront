@@ -122,13 +122,14 @@ function normalizeCategoryKey(cat) {
 
 async function postI18n(chave, valor, idioma) {
   try {
-    await fetch(`${I18N_URL}/traducoes`, {
+    const res = await fetch(`${I18N_URL}/traducoes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chave, valor, sistema: I18N_SISTEMA, idioma }),
     });
+    return res.ok;
   } catch (_) {
-    // fire-and-forget — não bloqueia o fluxo do admin
+    return false;
   }
 }
 
@@ -165,7 +166,13 @@ async function saveProductTranslations(
     }
   }
 
-  await Promise.allSettled(tasks);
+  const results = await Promise.all(tasks);
+  const succeeded = results.filter(Boolean).length;
+  return {
+    total: results.length,
+    succeeded,
+    failed: results.length - succeeded,
+  };
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -658,7 +665,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
 }
 
 function ProductCard({ product, onEdit }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const productTypeLabel = product.isCrust
     ? t("ADMIN_PRODUCTS_TYPE_CRUST", "Borda recheada")
@@ -684,6 +691,50 @@ function ProductCard({ product, onEdit }) {
     },
     onError: () =>
       toast.error(t("ADMIN_PRODUCTS_STATUS_ERROR", "Falha ao alterar status")),
+  });
+
+  const reapplyTranslations = useMutation({
+    mutationFn: async () => {
+      const baseLocale = ALL_LOCALES.includes(locale) ? locale : "pt-BR";
+      const summary = await saveProductTranslations(
+        product.id,
+        product.name,
+        product.description,
+        product.category,
+        baseLocale,
+      );
+      if (!summary.total || summary.succeeded === 0) {
+        throw new Error("Translation sync failed");
+      }
+      return summary;
+    },
+    onSuccess: ({ succeeded, failed }) => {
+      if (failed > 0) {
+        toast.success(
+          t(
+            "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_PARTIAL",
+            "Traducoes reaplicadas parcialmente ({{ok}} OK, {{fail}} falharam).",
+          )
+            .replace("{{ok}}", String(succeeded))
+            .replace("{{fail}}", String(failed)),
+        );
+        return;
+      }
+      toast.success(
+        t(
+          "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_SUCCESS",
+          "Traducoes reaplicadas com sucesso.",
+        ),
+      );
+    },
+    onError: () => {
+      toast.error(
+        t(
+          "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_ERROR",
+          "Falha ao reaplicar traducoes.",
+        ),
+      );
+    },
   });
 
   return (
@@ -755,19 +806,29 @@ function ProductCard({ product, onEdit }) {
         ))}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         <button
           type="button"
           onClick={() => onEdit(product)}
-          className="flex-1 rounded-2xl border border-gold/30 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
+          className="rounded-2xl border border-gold/30 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
         >
           {t("EDIT", "Editar")}
         </button>
         <button
           type="button"
+          disabled={reapplyTranslations.isPending}
+          onClick={() => reapplyTranslations.mutate()}
+          className="rounded-2xl border border-sky-400/30 py-2 text-xs font-semibold text-sky-600 transition hover:bg-sky-500/10 disabled:opacity-50"
+        >
+          {reapplyTranslations.isPending
+            ? t("ADMIN_PRODUCTS_REAPPLY_TRANSLATION_LOADING", "Reaplicando...")
+            : t("ADMIN_PRODUCTS_REAPPLY_TRANSLATION", "Reaplicar traducao")}
+        </button>
+        <button
+          type="button"
           disabled={toggleActive.isPending}
           onClick={() => toggleActive.mutate()}
-          className={`flex-1 rounded-2xl border py-2 text-xs font-semibold transition ${
+          className={`rounded-2xl border py-2 text-xs font-semibold transition ${
             product.isActive
               ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
               : "border-green-500/30 text-green-400 hover:bg-green-500/10"
