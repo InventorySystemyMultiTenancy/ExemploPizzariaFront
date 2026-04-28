@@ -74,6 +74,14 @@ function writeCache(locale, data) {
   }
 }
 
+function clearCache(locale) {
+  try {
+    localStorage.removeItem(cacheKey(locale));
+  } catch {
+    // ignora silenciosamente
+  }
+}
+
 // ─── fetch ──────────────────────────────────────────────────────────────────
 
 async function fetchTranslations(locale) {
@@ -202,6 +210,7 @@ export function I18nProvider({ children }) {
         direction,
         loading,
         refreshTranslations,
+        invalidateCache: clearCache,
       }}
     >
       {children}

@@ -114,7 +114,7 @@ async function saveProductTranslations(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
-  const { t, locale, refreshTranslations } = useTranslation();
+  const { t, locale, refreshTranslations, invalidateCache } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
   const [translationBaseLocale, setTranslationBaseLocale] = useState(() =>
@@ -184,6 +184,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           saved.category,
           translationBaseLocale,
         ).then(() => {
+          invalidateCache?.(baseLocale);
           refreshTranslations?.();
         });
       }
