@@ -35,6 +35,14 @@ const I18N_URL =
   "https://tradudor-i8n-languages.onrender.com";
 const I18N_SISTEMA = "website";
 const ALL_LOCALES = ["pt-BR", "pt-PT", "en-US", "it-IT", "es-ES", "ar-MA"];
+const TRANSLATE_CODE_MAP = {
+  "pt-BR": "pt-BR",
+  "pt-PT": "pt-PT",
+  "en-US": "en",
+  "it-IT": "it",
+  "es-ES": "es",
+  "ar-MA": "ar",
+};
 const LOCALE_LABELS = {
   "pt-BR": "Portugues (Brasil)",
   "pt-PT": "Portugues (Portugal)",
@@ -140,6 +148,26 @@ async function postI18n(chave, valor, idioma) {
   }
 }
 
+async function translateText(text, fromLocale, toLocale) {
+  if (!text) return "";
+  if (fromLocale === toLocale) return text;
+
+  const from = TRANSLATE_CODE_MAP[fromLocale] ?? fromLocale;
+  const to = TRANSLATE_CODE_MAP[toLocale] ?? toLocale;
+
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(from)}|${encodeURIComponent(to)}`,
+    );
+    if (!res.ok) return text;
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText?.trim();
+    return translated || text;
+  } catch {
+    return text;
+  }
+}
+
 async function saveProductTranslations(
   id,
   name,
@@ -150,15 +178,37 @@ async function saveProductTranslations(
   const tasks = [];
   const locales = [...new Set([baseLocale, ...ALL_LOCALES])];
 
-  // Nome e descrição: replica para todos os idiomas usando o texto base informado
+  const nameByLocale = {};
+  const descByLocale = {};
+
+  if (name) {
+    await Promise.all(
+      locales.map(async (locale) => {
+        nameByLocale[locale] = await translateText(name, baseLocale, locale);
+      }),
+    );
+  }
+  if (description) {
+    await Promise.all(
+      locales.map(async (locale) => {
+        descByLocale[locale] = await translateText(
+          description,
+          baseLocale,
+          locale,
+        );
+      }),
+    );
+  }
+
+  // Nome e descrição: traduz para cada idioma alvo
   if (name) {
     for (const locale of locales) {
-      tasks.push(postI18n(`PRODUCT_${id}_NAME`, name, locale));
+      tasks.push(postI18n(`PRODUCT_${id}_NAME`, nameByLocale[locale], locale));
     }
   }
   if (description) {
     for (const locale of locales) {
-      tasks.push(postI18n(`PRODUCT_${id}_DESC`, description, locale));
+      tasks.push(postI18n(`PRODUCT_${id}_DESC`, descByLocale[locale], locale));
     }
   }
 
