@@ -29,10 +29,153 @@ const emptyForm = () => ({
   singleCostPrice: "",
 });
 
+// ── Tradução automática de produtos ──────────────────────────────────────────
+const I18N_URL =
+  import.meta.env.VITE_I18N_URL ||
+  "https://tradudor-i8n-languages.onrender.com";
+const I18N_SISTEMA = "website";
+const ALL_LOCALES = ["pt-BR", "pt-PT", "en-US", "it-IT", "es-ES", "ar-MA"];
+const LOCALE_LABELS = {
+  "pt-BR": "Portugues (Brasil)",
+  "pt-PT": "Portugues (Portugal)",
+  "en-US": "English",
+  "it-IT": "Italiano",
+  "es-ES": "Espanol",
+  "ar-MA": "Arabic",
+};
+
+const CATEGORY_TRANSLATIONS = {
+  Geral: {
+    "pt-BR": "Geral",
+    "pt-PT": "Geral",
+    "en-US": "General",
+    "it-IT": "Generale",
+    "es-ES": "General",
+    "ar-MA": "عام",
+  },
+  Pizzas: {
+    "pt-BR": "Pizzas",
+    "pt-PT": "Pizzas",
+    "en-US": "Pizzas",
+    "it-IT": "Pizze",
+    "es-ES": "Pizzas",
+    "ar-MA": "بيتزا",
+  },
+  Bebidas: {
+    "pt-BR": "Bebidas",
+    "pt-PT": "Bebidas",
+    "en-US": "Drinks",
+    "it-IT": "Bevande",
+    "es-ES": "Bebidas",
+    "ar-MA": "مشروبات",
+  },
+  Porções: {
+    "pt-BR": "Porções",
+    "pt-PT": "Porções",
+    "en-US": "Sides",
+    "it-IT": "Contorni",
+    "es-ES": "Porciones",
+    "ar-MA": "مقبلات",
+  },
+  Sobremesas: {
+    "pt-BR": "Sobremesas",
+    "pt-PT": "Sobremesas",
+    "en-US": "Desserts",
+    "it-IT": "Dessert",
+    "es-ES": "Postres",
+    "ar-MA": "حلويات",
+  },
+  Petiscos: {
+    "pt-BR": "Petiscos",
+    "pt-PT": "Petiscos",
+    "en-US": "Snacks",
+    "it-IT": "Stuzzichini",
+    "es-ES": "Aperitivos",
+    "ar-MA": "وجبات خفيفة",
+  },
+  Beirutes: {
+    "pt-BR": "Beirutes",
+    "pt-PT": "Beirutes",
+    "en-US": "Sandwiches",
+    "it-IT": "Panini",
+    "es-ES": "Sándwiches",
+    "ar-MA": "سندويشات",
+  },
+  Promoções: {
+    "pt-BR": "Promoções",
+    "pt-PT": "Promoções",
+    "en-US": "Specials",
+    "it-IT": "Offerte",
+    "es-ES": "Promociones",
+    "ar-MA": "عروض",
+  },
+};
+
+function normalizeCategoryKey(cat) {
+  return `CAT_${(cat ?? "GERAL")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Z0-9_]/g, "")}`;
+}
+
+async function postI18n(chave, valor, idioma) {
+  try {
+    await fetch(`${I18N_URL}/traducoes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chave, valor, sistema: I18N_SISTEMA, idioma }),
+    });
+  } catch (_) {
+    // fire-and-forget — não bloqueia o fluxo do admin
+  }
+}
+
+async function saveProductTranslations(
+  id,
+  name,
+  description,
+  category,
+  baseLocale = "pt-BR",
+) {
+  const tasks = [];
+  const locales = [...new Set([baseLocale, ...ALL_LOCALES])];
+
+  // Nome e descrição: replica para todos os idiomas usando o texto base informado
+  if (name) {
+    for (const locale of locales) {
+      tasks.push(postI18n(`PRODUCT_${id}_NAME`, name, locale));
+    }
+  }
+  if (description) {
+    for (const locale of locales) {
+      tasks.push(postI18n(`PRODUCT_${id}_DESC`, description, locale));
+    }
+  }
+
+  // Categoria: se conhecida usa traduções mapeadas; senão replica texto base
+  if (category) {
+    const catKey = normalizeCategoryKey(category);
+    const known = CATEGORY_TRANSLATIONS[category];
+    for (const locale of locales) {
+      const value =
+        locale === baseLocale ? category : (known?.[locale] ?? category);
+      tasks.push(postI18n(catKey, value, locale));
+    }
+  }
+
+  await Promise.allSettled(tasks);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function ProductModal({ product, onClose, existingCategories = [] }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
+  const [translationBaseLocale, setTranslationBaseLocale] = useState(() =>
+    ALL_LOCALES.includes(locale) ? locale : "pt-BR",
+  );
 
   const [form, setForm] = useState(() => {
     if (!isEdit) return emptyForm();
@@ -80,13 +223,24 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
       const res = await api.post("/admin/products", payload);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success(
         isEdit
           ? t("ADMIN_PRODUCTS_UPDATED", "Produto atualizado!")
           : t("ADMIN_PRODUCTS_CREATED", "Produto criado!"),
       );
+      // Salva traduções no banco i18n (fire-and-forget, não bloqueia o admin)
+      const saved = result?.data ?? result;
+      if (saved?.id) {
+        saveProductTranslations(
+          saved.id,
+          saved.name,
+          saved.description,
+          saved.category,
+          translationBaseLocale,
+        );
+      }
       onClose();
     },
     onError: (err) => {
@@ -248,6 +402,30 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
                 <option key={cat} value={cat} />
               ))}
             </datalist>
+          </div>
+
+          {/* Translation base language */}
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-widest text-smoke">
+              {t("ADMIN_PRODUCTS_BASE_LANGUAGE", "Idioma base do cadastro")}
+            </label>
+            <select
+              value={translationBaseLocale}
+              onChange={(e) => setTranslationBaseLocale(e.target.value)}
+              className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-900 outline-none focus:border-gold/50"
+            >
+              {ALL_LOCALES.map((loc) => (
+                <option key={loc} value={loc}>
+                  {LOCALE_LABELS[loc] ?? loc}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-smoke">
+              {t(
+                "ADMIN_PRODUCTS_BASE_LANGUAGE_HINT",
+                "O texto digitado sera salvo neste idioma e replicado automaticamente para os outros.",
+              )}
+            </p>
           </div>
 
           <div>
