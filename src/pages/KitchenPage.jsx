@@ -248,7 +248,9 @@ function OrderCard({
             onClick={() => onConfirmPayment(order.id)}
             className="flex-1 rounded-2xl bg-gradient-to-r from-green-600 to-green-500 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {confirmingPayment ? "..." : "✅ Confirmar Pgto"}
+            {confirmingPayment
+              ? "..."
+              : t("KITCHEN_CONFIRM_PAYMENT_BTN", "✅ Confirmar Pgto")}
           </button>
           <button
             type="button"
@@ -256,7 +258,9 @@ function OrderCard({
             onClick={() => onPayLater(order.id)}
             className="flex-1 rounded-2xl border-2 border-amber-400 bg-amber-50 py-3 text-sm font-bold text-amber-800 transition hover:bg-amber-100 disabled:opacity-50"
           >
-            {confirmingPayment ? "..." : "⏳ Pagar Depois"}
+            {confirmingPayment
+              ? "..."
+              : t("KITCHEN_PAY_LATER_BTN", "⏳ Pagar Depois")}
           </button>
         </div>
       )}
@@ -277,7 +281,7 @@ function OrderCard({
       {needsCodeConfirm && (
         <div className="mt-4">
           <p className="mb-1.5 text-[10px] uppercase tracking-widest text-smoke">
-            📍 Código do cliente
+            {t("KITCHEN_DELIVERY_CODE_SECTION", "📍 Código do cliente")}
           </p>
           <div className="flex gap-2">
             <input
@@ -302,7 +306,9 @@ function OrderCard({
               }}
               className="flex-1 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
             >
-              {confirmingDelivery ? "Confirmando..." : "✓ Confirmar Entrega"}
+              {confirmingDelivery
+                ? t("KITCHEN_CONFIRMING_DELIVERY", "Confirmando...")
+                : t("KITCHEN_CONFIRM_DELIVERY_BTN", "✓ Confirmar Entrega")}
             </button>
           </div>
         </div>
@@ -345,7 +351,9 @@ function OrderCard({
                 disabled={assigningMotoboy}
                 className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs"
               >
-                <option value="">Selecionar motoboy...</option>
+                <option value="">
+                  {t("KITCHEN_SELECT_MOTOBOY", "Selecionar motoboy...")}
+                </option>
                 {motoboys.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
@@ -361,7 +369,10 @@ function OrderCard({
         (confirmCancel ? (
           <div className="mt-2 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2">
             <span className="flex-1 text-xs text-red-600">
-              Cancelar pedido #{order.id.slice(-6).toUpperCase()}?
+              {t(
+                "KITCHEN_CANCEL_CONFIRM_TEXT",
+                "Cancelar pedido #{{id}}?",
+              ).replace("{{id}}", order.id.slice(-6).toUpperCase())}
             </span>
             <button
               type="button"
@@ -372,14 +383,14 @@ function OrderCard({
               }}
               className="rounded-xl bg-red-500 px-3 py-1 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
             >
-              {cancelling ? "..." : "Sim"}
+              {cancelling ? "..." : t("YES", "Sim")}
             </button>
             <button
               type="button"
               onClick={() => setConfirmCancel(false)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-1 text-xs font-semibold hover:bg-gray-100"
             >
-              Não
+              {t("NO", "Não")}
             </button>
           </div>
         ) : (
@@ -389,7 +400,9 @@ function OrderCard({
             onClick={() => setConfirmCancel(true)}
             className="mt-2 w-full rounded-2xl border border-red-400/50 bg-red-500/10 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 disabled:opacity-40"
           >
-            {cancelling ? "Cancelando..." : "Cancelar Pedido"}
+            {cancelling
+              ? t("KITCHEN_CANCELLING", "Cancelando...")
+              : t("KITCHEN_CANCEL_ORDER_BTN", "Cancelar Pedido")}
           </button>
         ))}
     </article>
@@ -560,9 +573,10 @@ function KitchenPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success("Status atualizado");
+      toast.success(t("KITCHEN_STATUS_UPDATED", "Status atualizado"));
     },
-    onError: () => toast.error("Falha ao atualizar status"),
+    onError: () =>
+      toast.error(t("KITCHEN_STATUS_ERROR", "Falha ao atualizar status")),
   });
 
   const { data: motoboys = [] } = useQuery({
@@ -592,9 +606,10 @@ function KitchenPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success("Motoboy atribuído");
+      toast.success(t("KITCHEN_MOTOBOY_ASSIGNED", "Motoboy atribuído"));
     },
-    onError: () => toast.error("Falha ao atribuir motoboy"),
+    onError: () =>
+      toast.error(t("KITCHEN_MOTOBOY_ERROR", "Falha ao atribuir motoboy")),
   });
 
   const {
@@ -607,7 +622,9 @@ function KitchenPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success("Entrega confirmada!");
+      toast.success(
+        t("KITCHEN_DELIVERY_CONFIRMED_TOAST", "Entrega confirmada!"),
+      );
     },
     onError: (err) => {
       const msg = err.response?.data?.message ?? "Código inválido";
@@ -626,9 +643,10 @@ function KitchenPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success("Pedido cancelado");
+      toast.success(t("KITCHEN_ORDER_CANCELLED", "Pedido cancelado"));
     },
-    onError: () => toast.error("Falha ao cancelar pedido"),
+    onError: () =>
+      toast.error(t("KITCHEN_CANCEL_ERROR", "Falha ao cancelar pedido")),
   });
 
   const {
@@ -644,9 +662,9 @@ function KitchenPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kitchen-orders"] });
-      toast.success("Atualizado com sucesso");
+      toast.success(t("KITCHEN_UPDATED_SUCCESS", "Atualizado com sucesso"));
     },
-    onError: () => toast.error("Falha ao atualizar"),
+    onError: () => toast.error(t("KITCHEN_UPDATE_ERROR", "Falha ao atualizar")),
   });
 
   const lastUpdate = dataUpdatedAt
@@ -973,7 +991,9 @@ function KitchenPage() {
                 }`}
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">{col.label}</h2>
+                  <h2 className="font-semibold text-gray-900">
+                    {t(`KITCHEN_COLUMN_${col.key}`, col.label)}
+                  </h2>
                   <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-smoke">
                     {stageOrders.length}
                   </span>

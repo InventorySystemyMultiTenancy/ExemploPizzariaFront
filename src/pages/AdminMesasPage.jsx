@@ -10,6 +10,7 @@ const EMPTY_FORM = { name: "", number: "", terminalId: "" };
 
 // ── Modal de QR Code ─────────────────────────────────────────────────────────
 function QrModal({ mesa, onClose }) {
+  const { t } = useTranslation();
   const url = `${window.location.origin}/mesa/${mesa.accessToken}`;
 
   const handlePrint = () => {
@@ -40,7 +41,10 @@ function QrModal({ mesa, onClose }) {
           {mesa.name}
         </h2>
         <p className="mb-4 text-center text-xs text-gray-500">
-          Mesa {mesa.number} — escaneie para pedir
+          {t(
+            "ADMIN_MESAS_QR_SCAN_HINT",
+            "Mesa {{number}} — escaneie para pedir",
+          ).replace("{{number}}", mesa.number)}
         </p>
 
         <div id={`qr-svg-${mesa.id}`} className="flex justify-center">
@@ -56,13 +60,13 @@ function QrModal({ mesa, onClose }) {
             onClick={handlePrint}
             className="flex-1 rounded-xl bg-gold py-2.5 text-sm font-semibold text-white hover:opacity-90"
           >
-            🖨️ Imprimir
+            {t("ADMIN_MESAS_PRINT", "🖨️ Imprimir")}
           </button>
           <button
             onClick={onClose}
             className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
           >
-            Fechar
+            {t("BTN_CLOSE", "Fechar")}
           </button>
         </div>
       </div>
@@ -73,6 +77,7 @@ function QrModal({ mesa, onClose }) {
 // ── Modal de criação / edição ─────────────────────────────────────────────────
 function MesaModal({ mesa, onClose }) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const isEdit = !!mesa;
 
   const [form, setForm] = useState(
@@ -99,12 +104,17 @@ function MesaModal({ mesa, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-mesas"] });
-      toast.success(isEdit ? "Mesa atualizada!" : "Mesa criada!");
+      toast.success(
+        isEdit
+          ? t("ADMIN_MESAS_UPDATED", "Mesa atualizada!")
+          : t("ADMIN_MESAS_CREATED", "Mesa criada!"),
+      );
       onClose();
     },
     onError: (err) => {
       toast.error(
-        err?.response?.data?.error?.message ?? "Erro ao salvar mesa.",
+        err?.response?.data?.error?.message ??
+          t("ADMIN_MESAS_ERROR_SAVE", "Erro ao salvar mesa."),
       );
     },
   });
@@ -112,8 +122,14 @@ function MesaModal({ mesa, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const num = parseInt(form.number, 10);
-    if (!form.name.trim()) return toast.error("Informe o nome da mesa.");
-    if (!num || num < 1) return toast.error("Número de mesa inválido.");
+    if (!form.name.trim())
+      return toast.error(
+        t("ADMIN_MESAS_ERROR_NAME", "Informe o nome da mesa."),
+      );
+    if (!num || num < 1)
+      return toast.error(
+        t("ADMIN_MESAS_ERROR_NUMBER", "Número de mesa inválido."),
+      );
 
     const payload = {
       name: form.name.trim(),
@@ -129,19 +145,21 @@ function MesaModal({ mesa, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
         <h2 className="mb-4 font-display text-xl text-gray-900">
-          {isEdit ? "Editar Mesa" : "Nova Mesa"}
+          {isEdit
+            ? t("ADMIN_MESAS_FORM_TITLE_EDIT", "Editar Mesa")
+            : t("ADMIN_MESAS_FORM_TITLE_NEW", "Nova Mesa")}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">
-              Nome da mesa *
+              {t("ADMIN_MESAS_FORM_NAME_LABEL", "Nome da mesa *")}
             </label>
             <input
               type="text"
               required
               maxLength={100}
-              placeholder="Ex: Mesa Varanda 1"
+              placeholder={t("ADMIN_MESAS_FORM_NAME_PH", "Ex: Mesa Varanda 1")}
               value={form.name}
               onChange={set("name")}
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-gold/60 focus:outline-none"
@@ -150,7 +168,7 @@ function MesaModal({ mesa, onClose }) {
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">
-              Número da mesa *
+              {t("ADMIN_MESAS_FORM_NUMBER_LABEL", "Número da mesa *")}
             </label>
             <input
               type="number"
@@ -166,7 +184,10 @@ function MesaModal({ mesa, onClose }) {
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">
-              ID da Maquininha (Mercado Pago Point)
+              {t(
+                "ADMIN_MESAS_FORM_TERMINAL_LABEL",
+                "ID da Maquininha (Mercado Pago Point)",
+              )}
             </label>
             <input
               type="text"
@@ -177,7 +198,10 @@ function MesaModal({ mesa, onClose }) {
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:border-gold/60 focus:outline-none"
             />
             <p className="mt-1 text-[10px] text-gray-400">
-              Deixe em branco se a mesa não tiver maquininha dedicada.
+              {t(
+                "ADMIN_MESAS_FORM_TERMINAL_HINT",
+                "Deixe em branco se a mesa não tiver maquininha dedicada.",
+              )}
             </p>
           </div>
 
@@ -187,14 +211,16 @@ function MesaModal({ mesa, onClose }) {
               disabled={mutation.isPending}
               className="flex-1 rounded-xl bg-rosso py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
-              {mutation.isPending ? "Salvando..." : "Salvar"}
+              {mutation.isPending
+                ? t("ADMIN_MESAS_SAVING", "Salvando...")
+                : t("ADMIN_MESAS_SAVE", "Salvar")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400"
             >
-              Cancelar
+              {t("ADMIN_MESAS_CANCEL", "Cancelar")}
             </button>
           </div>
         </form>
@@ -206,16 +232,18 @@ function MesaModal({ mesa, onClose }) {
 // ── Card de cada mesa ─────────────────────────────────────────────────────────
 function MesaCard({ mesa, onEdit, onQr }) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/mesas/${mesa.id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-mesas"] });
-      toast.success("Mesa removida.");
+      toast.success(t("ADMIN_MESAS_REMOVED", "Mesa removida."));
     },
     onError: (err) => {
       toast.error(
-        err?.response?.data?.error?.message ?? "Erro ao remover mesa.",
+        err?.response?.data?.error?.message ??
+          t("ADMIN_MESAS_REMOVE_ERROR", "Erro ao remover mesa."),
       );
     },
   });
@@ -224,15 +252,19 @@ function MesaCard({ mesa, onEdit, onQr }) {
     mutationFn: () => api.post(`/mesas/${mesa.id}/regenerar-token`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-mesas"] });
-      toast.success("Novo QR code gerado!");
+      toast.success(t("ADMIN_MESAS_QR_GENERATED", "Novo QR code gerado!"));
     },
-    onError: () => toast.error("Erro ao regenerar QR code."),
+    onError: () =>
+      toast.error(t("ADMIN_MESAS_QR_ERROR", "Erro ao regenerar QR code.")),
   });
 
   const handleDelete = () => {
     if (
       !window.confirm(
-        `Remover "${mesa.name}"? Esta ação não pode ser desfeita.`,
+        t(
+          "ADMIN_MESAS_CONFIRM_REMOVE",
+          'Remover "{{name}}"? Esta ação não pode ser desfeita.',
+        ).replace("{{name}}", mesa.name),
       )
     )
       return;
@@ -242,7 +274,10 @@ function MesaCard({ mesa, onEdit, onQr }) {
   const handleRegen = () => {
     if (
       !window.confirm(
-        `Gerar novo QR code para "${mesa.name}"?\nO QR code antigo deixará de funcionar.`,
+        t(
+          "ADMIN_MESAS_CONFIRM_REGEN",
+          'Gerar novo QR code para "{{name}}"? O QR code antigo deixará de funcionar.',
+        ).replace("{{name}}", mesa.name),
       )
     )
       return;
@@ -263,18 +298,23 @@ function MesaCard({ mesa, onEdit, onQr }) {
             {mesa.name}
             {!mesa.isActive && (
               <span className="ml-2 text-xs font-normal text-gray-400">
-                (inativa)
+                {t("ADMIN_MESAS_INACTIVE", "(inativa)")}
               </span>
             )}
           </p>
-          <p className="text-xs text-gray-500">Mesa nº {mesa.number}</p>
+          <p className="text-xs text-gray-500">
+            {t("ADMIN_MESAS_TABLE_NUMBER", "Mesa nº {{number}}").replace(
+              "{{number}}",
+              mesa.number,
+            )}
+          </p>
           {mesa.terminalId ? (
             <p className="mt-0.5 font-mono text-[10px] text-gray-400">
               🖲️ {mesa.terminalId}
             </p>
           ) : (
             <p className="mt-0.5 text-[10px] text-amber-500">
-              ⚠️ Sem maquininha vinculada
+              {t("ADMIN_MESAS_NO_TERMINAL", "⚠️ Sem maquininha vinculada")}
             </p>
           )}
         </div>
@@ -283,7 +323,7 @@ function MesaCard({ mesa, onEdit, onQr }) {
           onClick={() => onQr(mesa)}
           className="flex-shrink-0 rounded-xl bg-gold/10 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/20"
         >
-          QR Code
+          {t("ADMIN_MESAS_QR_BUTTON", "QR Code")}
         </button>
       </div>
 
@@ -292,21 +332,21 @@ function MesaCard({ mesa, onEdit, onQr }) {
           onClick={() => onEdit(mesa)}
           className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400"
         >
-          ✏️ Editar
+          {t("ADMIN_MESAS_EDIT_BUTTON", "✏️ Editar")}
         </button>
         <button
           onClick={handleRegen}
           disabled={regenMutation.isPending}
           className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400 disabled:opacity-50"
         >
-          🔄 Novo QR
+          {t("ADMIN_MESAS_NEW_QR_BUTTON", "🔄 Novo QR")}
         </button>
         <button
           onClick={handleDelete}
           disabled={deleteMutation.isPending}
           className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50"
         >
-          🗑️ Remover
+          {t("ADMIN_MESAS_REMOVE_BUTTON", "🗑️ Remover")}
         </button>
       </div>
     </div>
