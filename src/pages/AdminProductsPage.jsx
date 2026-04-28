@@ -67,6 +67,12 @@ async function saveProductTranslations(
   category,
   baseLocale = "pt-BR",
 ) {
+  console.log("[REAPPLY] Iniciando tradução para produto:", {
+    id,
+    name,
+    baseLocale,
+  });
+
   const res = await fetch(`${I18N_URL}/traducoes/produto-auto`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -80,13 +86,25 @@ async function saveProductTranslations(
     }),
   });
 
+  console.log("[REAPPLY] Response status:", res.status);
+
   if (!res.ok) {
+    console.error(
+      "[REAPPLY] Erro - Response não OK:",
+      res.status,
+      res.statusText,
+    );
     return { total: 0, succeeded: 0, failed: 0 };
   }
 
   const data = await res.json();
+  console.log("[REAPPLY] Response data:", data);
+
   const total = Number(data?.resumo?.totalSalvos ?? 0);
   const succeeded = total;
+
+  console.log("[REAPPLY] Total translations:", total);
+
   return {
     total,
     succeeded,
@@ -624,6 +642,11 @@ function ProductCard({ product, onEdit }) {
   const reapplyTranslations = useMutation({
     mutationFn: async () => {
       const baseLocale = ALL_LOCALES.includes(locale) ? locale : "pt-BR";
+      console.log(
+        "[MUTATION] Iniciando reapplyTranslations com baseLocale:",
+        baseLocale,
+      );
+
       const summary = await saveProductTranslations(
         product.id,
         product.name,
@@ -631,12 +654,24 @@ function ProductCard({ product, onEdit }) {
         product.category,
         baseLocale,
       );
+
+      console.log("[MUTATION] Summary retornado:", summary);
+
       if (!summary.total || summary.succeeded === 0) {
+        console.error("[MUTATION] Erro - summary.total é 0 ou falsy");
         throw new Error("Translation sync failed");
       }
+
+      console.log("[MUTATION] Sucesso - total:", summary.total);
       return summary;
     },
     onSuccess: ({ succeeded, failed }) => {
+      console.log(
+        "[MUTATION SUCCESS] succeeded:",
+        succeeded,
+        "failed:",
+        failed,
+      );
       refreshTranslations?.();
       if (failed > 0) {
         toast.success(
@@ -656,7 +691,8 @@ function ProductCard({ product, onEdit }) {
         ),
       );
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[MUTATION ERROR]", error);
       toast.error(
         t(
           "ADMIN_PRODUCTS_REAPPLY_TRANSLATION_ERROR",
