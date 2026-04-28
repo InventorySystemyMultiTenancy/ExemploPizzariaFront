@@ -35,14 +35,6 @@ const I18N_URL =
   "https://tradudor-i8n-languages.onrender.com";
 const I18N_SISTEMA = "website";
 const ALL_LOCALES = ["pt-BR", "pt-PT", "en-US", "it-IT", "es-ES", "ar-MA"];
-const TRANSLATE_CODE_MAP = {
-  "pt-BR": "pt-BR",
-  "pt-PT": "pt-PT",
-  "en-US": "en",
-  "it-IT": "it",
-  "es-ES": "es",
-  "ar-MA": "ar",
-};
 const LOCALE_LABELS = {
   "pt-BR": "Portugues (Brasil)",
   "pt-PT": "Portugues (Portugal)",
@@ -50,73 +42,6 @@ const LOCALE_LABELS = {
   "it-IT": "Italiano",
   "es-ES": "Espanol",
   "ar-MA": "Arabic",
-};
-
-const CATEGORY_TRANSLATIONS = {
-  Geral: {
-    "pt-BR": "Geral",
-    "pt-PT": "Geral",
-    "en-US": "General",
-    "it-IT": "Generale",
-    "es-ES": "General",
-    "ar-MA": "عام",
-  },
-  Pizzas: {
-    "pt-BR": "Pizzas",
-    "pt-PT": "Pizzas",
-    "en-US": "Pizzas",
-    "it-IT": "Pizze",
-    "es-ES": "Pizzas",
-    "ar-MA": "بيتزا",
-  },
-  Bebidas: {
-    "pt-BR": "Bebidas",
-    "pt-PT": "Bebidas",
-    "en-US": "Drinks",
-    "it-IT": "Bevande",
-    "es-ES": "Bebidas",
-    "ar-MA": "مشروبات",
-  },
-  Porções: {
-    "pt-BR": "Porções",
-    "pt-PT": "Porções",
-    "en-US": "Sides",
-    "it-IT": "Contorni",
-    "es-ES": "Porciones",
-    "ar-MA": "مقبلات",
-  },
-  Sobremesas: {
-    "pt-BR": "Sobremesas",
-    "pt-PT": "Sobremesas",
-    "en-US": "Desserts",
-    "it-IT": "Dessert",
-    "es-ES": "Postres",
-    "ar-MA": "حلويات",
-  },
-  Petiscos: {
-    "pt-BR": "Petiscos",
-    "pt-PT": "Petiscos",
-    "en-US": "Snacks",
-    "it-IT": "Stuzzichini",
-    "es-ES": "Aperitivos",
-    "ar-MA": "وجبات خفيفة",
-  },
-  Beirutes: {
-    "pt-BR": "Beirutes",
-    "pt-PT": "Beirutes",
-    "en-US": "Sandwiches",
-    "it-IT": "Panini",
-    "es-ES": "Sándwiches",
-    "ar-MA": "سندويشات",
-  },
-  Promoções: {
-    "pt-BR": "Promoções",
-    "pt-PT": "Promoções",
-    "en-US": "Specials",
-    "it-IT": "Offerte",
-    "es-ES": "Promociones",
-    "ar-MA": "عروض",
-  },
 };
 
 function normalizeCategoryKey(cat) {
@@ -135,39 +60,6 @@ function tProductField(t, productId, field, fallback) {
   return t(lowerKey, t(upperKey, fallback));
 }
 
-async function postI18n(chave, valor, idioma) {
-  try {
-    const res = await fetch(`${I18N_URL}/traducoes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chave, valor, sistema: I18N_SISTEMA, idioma }),
-    });
-    return res.ok;
-  } catch (_) {
-    return false;
-  }
-}
-
-async function translateText(text, fromLocale, toLocale) {
-  if (!text) return "";
-  if (fromLocale === toLocale) return text;
-
-  const from = TRANSLATE_CODE_MAP[fromLocale] ?? fromLocale;
-  const to = TRANSLATE_CODE_MAP[toLocale] ?? toLocale;
-
-  try {
-    const res = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(from)}|${encodeURIComponent(to)}`,
-    );
-    if (!res.ok) return text;
-    const data = await res.json();
-    const translated = data?.responseData?.translatedText?.trim();
-    return translated || text;
-  } catch {
-    return text;
-  }
-}
-
 async function saveProductTranslations(
   id,
   name,
@@ -175,60 +67,30 @@ async function saveProductTranslations(
   category,
   baseLocale = "pt-BR",
 ) {
-  const tasks = [];
-  const locales = [...new Set([baseLocale, ...ALL_LOCALES])];
+  const res = await fetch(`${I18N_URL}/traducoes/produto-auto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId: id,
+      name,
+      description,
+      category,
+      baseLocale,
+      sistema: I18N_SISTEMA,
+    }),
+  });
 
-  const nameByLocale = {};
-  const descByLocale = {};
-
-  if (name) {
-    await Promise.all(
-      locales.map(async (locale) => {
-        nameByLocale[locale] = await translateText(name, baseLocale, locale);
-      }),
-    );
-  }
-  if (description) {
-    await Promise.all(
-      locales.map(async (locale) => {
-        descByLocale[locale] = await translateText(
-          description,
-          baseLocale,
-          locale,
-        );
-      }),
-    );
+  if (!res.ok) {
+    return { total: 0, succeeded: 0, failed: 0 };
   }
 
-  // Nome e descrição: traduz para cada idioma alvo
-  if (name) {
-    for (const locale of locales) {
-      tasks.push(postI18n(`PRODUCT_${id}_NAME`, nameByLocale[locale], locale));
-    }
-  }
-  if (description) {
-    for (const locale of locales) {
-      tasks.push(postI18n(`PRODUCT_${id}_DESC`, descByLocale[locale], locale));
-    }
-  }
-
-  // Categoria: se conhecida usa traduções mapeadas; senão replica texto base
-  if (category) {
-    const catKey = normalizeCategoryKey(category);
-    const known = CATEGORY_TRANSLATIONS[category];
-    for (const locale of locales) {
-      const value =
-        locale === baseLocale ? category : (known?.[locale] ?? category);
-      tasks.push(postI18n(catKey, value, locale));
-    }
-  }
-
-  const results = await Promise.all(tasks);
-  const succeeded = results.filter(Boolean).length;
+  const data = await res.json();
+  const total = Number(data?.resumo?.totalSalvos ?? 0);
+  const succeeded = total;
   return {
-    total: results.length,
+    total,
     succeeded,
-    failed: results.length - succeeded,
+    failed: 0,
   };
 }
 // ─────────────────────────────────────────────────────────────────────────────
