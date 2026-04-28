@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -44,6 +44,17 @@ const LOCALE_LABELS = {
   "ar-MA": "Arabic",
 };
 
+function isDebugEnabled() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("i18n_debug") === "1";
+}
+
+function debugLog(...args) {
+  if (isDebugEnabled()) {
+    console.log("[I18N_DEBUG][AdminProducts]", ...args);
+  }
+}
+
 function normalizeCategoryKey(cat) {
   return `CAT_${(cat ?? "GERAL")
     .toUpperCase()
@@ -57,7 +68,17 @@ function tProductField(t, productId, field, fallback) {
   const id = String(productId ?? "");
   const lowerKey = `PRODUCT_${id}_${field}`;
   const upperKey = `PRODUCT_${id.toUpperCase()}_${field}`;
-  return t(lowerKey, t(upperKey, fallback));
+  const upperValue = t(upperKey, fallback);
+  const resolved = t(lowerKey, upperValue);
+  debugLog("tProductField", {
+    productId: id,
+    field,
+    lowerKey,
+    upperKey,
+    resolved,
+    fallback,
+  });
+  return resolved;
 }
 
 async function saveProductTranslations(
@@ -70,6 +91,14 @@ async function saveProductTranslations(
   console.log("[REAPPLY] Iniciando tradução para produto:", {
     id,
     name,
+    baseLocale,
+  });
+  debugLog("saveProductTranslations:request", {
+    endpoint: `${I18N_URL}/traducoes/produto-auto`,
+    id,
+    name,
+    description,
+    category,
     baseLocale,
   });
 
@@ -99,6 +128,7 @@ async function saveProductTranslations(
 
   const data = await res.json();
   console.log("[REAPPLY] Response data:", data);
+  debugLog("saveProductTranslations:response", data);
 
   const total = Number(data?.resumo?.totalSalvos ?? 0);
   const succeeded = total;
@@ -617,6 +647,16 @@ function ProductCard({ product, onEdit }) {
     : (product.sizes?.length ?? 0) <= 1
       ? t("ADMIN_PRODUCTS_TYPE_OTHER", "Outros")
       : t("ADMIN_PRODUCTS_TYPE_FLAVOR", "Sabor");
+
+  useEffect(() => {
+    debugLog("productCard:render", {
+      locale,
+      productId: product.id,
+      originalName: product.name,
+      translatedName: productName,
+      translatedDescription: productDescription,
+    });
+  }, [locale, product.id, product.name, productName, productDescription]);
 
   const toggleActive = useMutation({
     mutationFn: async () => {

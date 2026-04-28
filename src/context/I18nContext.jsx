@@ -14,6 +14,17 @@ const ANON_LOCALE_KEY = `${STORAGE_NS}_locale`;
 const LEGACY_ANON_LOCALE_KEY = "i18n_locale";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 horas
 
+function isDebugEnabled() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("i18n_debug") === "1";
+}
+
+function debugLog(...args) {
+  if (isDebugEnabled()) {
+    console.log("[I18N_DEBUG][Context]", ...args);
+  }
+}
+
 const I18nContext = createContext(null);
 
 // ─── helpers de localStorage ────────────────────────────────────────────────
@@ -85,11 +96,18 @@ function clearCache(locale) {
 // ─── fetch ──────────────────────────────────────────────────────────────────
 
 async function fetchTranslations(locale) {
+  debugLog("fetchTranslations:start", { locale });
   const res = await fetch(
     `${I18N_API_URL}/traducoes/${SISTEMA}/${encodeURIComponent(locale)}`,
   );
+  debugLog("fetchTranslations:response", { locale, status: res.status });
   if (!res.ok) throw new Error(`I18n fetch failed: ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  debugLog("fetchTranslations:payload", {
+    locale,
+    totalKeys: Object.keys(data?.traducoes || {}).length,
+  });
+  return data;
 }
 
 // ─── Provider ───────────────────────────────────────────────────────────────
@@ -114,6 +132,11 @@ export function I18nProvider({ children }) {
     };
 
     const cached = readCache(locale);
+    debugLog("cache:read", {
+      locale,
+      hasCache: Boolean(cached),
+      cachedKeys: Object.keys(cached?.traducoes || {}).length,
+    });
 
     if (cached) {
       // Usa cache imediatamente — zero flash de carregamento
@@ -127,6 +150,10 @@ export function I18nProvider({ children }) {
         .then((data) => {
           if (cancelled) return;
           writeCache(locale, data);
+          debugLog("cache:write", {
+            locale,
+            keys: Object.keys(data?.traducoes || {}).length,
+          });
           apply(data);
         })
         .catch(() => {
@@ -141,6 +168,10 @@ export function I18nProvider({ children }) {
         .then((data) => {
           if (cancelled) return;
           writeCache(locale, data);
+          debugLog("cache:write", {
+            locale,
+            keys: Object.keys(data?.traducoes || {}).length,
+          });
           apply(data);
         })
         .catch(() => {
@@ -189,6 +220,10 @@ export function I18nProvider({ children }) {
     try {
       const data = await fetchTranslations(locale);
       writeCache(locale, data);
+      debugLog("refreshTranslations:applied", {
+        locale,
+        keys: Object.keys(data?.traducoes || {}).length,
+      });
 
       setTranslations(data.traducoes || {});
       const dir = data.direcao || "ltr";
@@ -197,6 +232,7 @@ export function I18nProvider({ children }) {
       document.documentElement.setAttribute("lang", locale);
       return true;
     } catch {
+      debugLog("refreshTranslations:error", { locale });
       return false;
     }
   }, [locale]);
