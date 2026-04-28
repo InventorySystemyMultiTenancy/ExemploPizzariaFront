@@ -114,12 +114,10 @@ async function saveProductTranslations(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ProductModal({ product, onClose, existingCategories = [] }) {
-  const { t, locale, refreshTranslations, invalidateCache } = useTranslation();
+  const { t, refreshTranslations, invalidateCache } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!product;
-  const [translationBaseLocale, setTranslationBaseLocale] = useState(() =>
-    ALL_LOCALES.includes(locale) ? locale : "pt-BR",
-  );
+  const [translationBaseLocale, setTranslationBaseLocale] = useState("pt-BR");
 
   const [form, setForm] = useState(() => {
     if (!isEdit) return emptyForm();
@@ -184,7 +182,7 @@ function ProductModal({ product, onClose, existingCategories = [] }) {
           saved.category,
           translationBaseLocale,
         ).then(() => {
-          invalidateCache?.(baseLocale);
+          invalidateCache?.(translationBaseLocale);
           refreshTranslations?.();
         });
       }
@@ -642,7 +640,7 @@ function ProductCard({ product, onEdit }) {
 
   const reapplyTranslations = useMutation({
     mutationFn: async () => {
-      const baseLocale = ALL_LOCALES.includes(locale) ? locale : "pt-BR";
+      const baseLocale = "pt-BR";
       console.log(
         "[MUTATION] Iniciando reapplyTranslations com baseLocale:",
         baseLocale,
